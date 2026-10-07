@@ -17,6 +17,7 @@ const vue = document.getElementById('vue');
 const titre = document.getElementById('titre');
 const retour = document.getElementById('retour');
 const bas = document.getElementById('bas');
+const progression = document.getElementById('progression');
 
 let index = null;            // contenu de matieres/index.json
 const cacheSections = {};    // chemin du .md → sections déjà découpées
@@ -63,18 +64,38 @@ const fichierDe = (chapitre, doc) => (doc === 'fiche' ? chapitre.fiche : chapitr
 const docParDefaut = chapitre => (chapitre.fiche ? 'fiche' : 'cours');
 
 // Position de lecture : dernière section lue de chaque document, et dernier document ouvert.
+// Le nombre de sections de chaque document est gardé pour afficher la progression à l'accueil.
 const positions = lire('positions', {});
+const totaux = lire('totaux', {});
 const cle = (doc, idMatiere, idChapitre) => `${doc}/${idMatiere}/${idChapitre}`;
 const lienPosition = (doc, idMatiere, idChapitre) =>
   `#/${doc}/${idMatiere}/${idChapitre}/${positions[cle(doc, idMatiere, idChapitre)] ?? 0}`;
 
-function memoriserPosition(doc, idMatiere, idChapitre, n) {
+function memoriserPosition(doc, idMatiere, idChapitre, n, total) {
   positions[cle(doc, idMatiere, idChapitre)] = n;
+  totaux[cle(doc, idMatiere, idChapitre)] = total;
   ecrire('positions', positions);
+  ecrire('totaux', totaux);
   ecrire('derniere-lecture', { doc, matiere: idMatiere, chapitre: idChapitre });
 }
 
+// Avancement dans un document : { n, total, pourcent } (total inconnu tant qu'il n'a pas été ouvert).
+function avancement(doc, idMatiere, idChapitre) {
+  const n = positions[cle(doc, idMatiere, idChapitre)];
+  const total = totaux[cle(doc, idMatiere, idChapitre)];
+  if (n === undefined || !total) return null;
+  return { n, total, pourcent: Math.round(((n + 1) / total) * 100) };
+}
+
+const jauge = pourcent => `<div class="jauge"><span style="width:${pourcent}%"></span></div>`;
+
+function modeAccueil(actif) {
+  document.body.classList.toggle('accueil', actif);
+  progression.hidden = actif;
+}
+
 function afficherAccueil() {
+  modeAccueil(true);
   titre.textContent = 'Révisions';
   retour.hidden = true;
   retour.href = '#/';
@@ -91,9 +112,12 @@ function afficherAccueil() {
     try {
       const { chapitre } = trouverChapitre(derniere.matiere, derniere.chapitre);
       if (!fichierDe(chapitre, derniere.doc)) throw new Error('document supprimé');
-      const n = positions[cle(derniere.doc, derniere.matiere, derniere.chapitre)] ?? 0;
+      const a = avancement(derniere.doc, derniere.matiere, derniere.chapitre);
       reprise = `<a class="reprise" href="${lienPosition(derniere.doc, derniere.matiere, derniere.chapitre)}">
-        <small>Reprendre · ${DOCUMENTS[derniere.doc]}</small>${echapper(chapitre.titre)} · section ${n + 1}</a>`;
+        <small>Reprendre · ${DOCUMENTS[derniere.doc]}</small>
+        <strong>${echapper(chapitre.titre)}</strong>
+        ${a ? `section ${a.n + 1} sur ${a.total}<div class="barre-reprise"><span style="width:${a.pourcent}%"></span></div>` : ''}
+      </a>`;
     } catch {
       // chapitre ou document supprimé depuis : pas de reprise
     }
@@ -103,8 +127,15 @@ function afficherAccueil() {
     <section class="matiere">
       <h2>${echapper(m.nom)}${m.notations ? ` <a class="lien-notations" href="#/notations/${m.id}">Notations</a>` : ''}</h2>
       <ul class="liste">
-        ${m.chapitres.map(c => `<li><a href="${lienPosition(docParDefaut(c), m.id, c.id)}">${echapper(c.titre)}
-          ${c.fiche ? '<small class="etiquette">fiche</small>' : ''}</a></li>`).join('')}
+        ${m.chapitres.map(c => {
+          const doc = docParDefaut(c);
+          const a = avancement(doc, m.id, c.id);
+          return `<li><a href="${lienPosition(doc, m.id, c.id)}">
+            <span class="nom">${echapper(c.titre)}${c.fiche ? '<small class="etiquette">fiche</small>' : ''}</span>
+            <span class="detail">${a ? `${DOCUMENTS[doc]} · section ${a.n + 1} sur ${a.total}` : 'Pas encore commencé'}</span>
+            ${a ? jauge(a.pourcent) : ''}
+          </a></li>`;
+        }).join('')}
       </ul>
     </section>`).join('');
 }
@@ -116,7 +147,9 @@ async function afficherSection(doc, idMatiere, idChapitre, n) {
   n = Math.min(Math.max(0, n), sections.length - 1);
   const lien = i => `#/${doc}/${idMatiere}/${idChapitre}/${i}`;
   lecture = { lien, n, total: sections.length };
-  memoriserPosition(doc, idMatiere, idChapitre, n);
+  memoriserPosition(doc, idMatiere, idChapitre, n, sections.length);
+  modeAccueil(false);
+  progression.firstElementChild.style.width = `${((n + 1) / sections.length) * 100}%`;
 
   // Onglets Fiche / Cours complet, seulement si le chapitre a une fiche.
   const onglets = chapitre.fiche ? `
@@ -130,13 +163,14 @@ async function afficherSection(doc, idMatiere, idChapitre, n) {
   titre.textContent = chapitre.titre;
   retour.hidden = false;
   retour.href = '#/';
-  vue.innerHTML = `${onglets}
-    <p class="position">Section ${n + 1} / ${sections.length}${notations}</p>
+  vue.innerHTML = `
+    ${onglets || notations ? `<div class="entete-lecture">${onglets}${notations}</div>` : ''}
     <article class="section">${sections[n].html}</article>`;
   bas.hidden = false;
   bas.innerHTML = `
-    <a href="${lien(n - 1)}" aria-disabled="${n === 0}">‹ Précédent</a>
-    <a href="${lien(n + 1)}" aria-disabled="${n === sections.length - 1}">Suivant ›</a>`;
+    <a class="precedent" href="${lien(n - 1)}" aria-disabled="${n === 0}" aria-label="Section précédente">‹ Préc.</a>
+    <span class="compteur">${n + 1} / ${sections.length}</span>
+    <a class="suivant" href="${lien(n + 1)}" aria-disabled="${n === sections.length - 1}" aria-label="Section suivante">Suivant ›</a>`;
   window.scrollTo(0, 0);
 }
 
@@ -145,6 +179,8 @@ async function afficherNotations(idMatiere) {
   if (!matiere.notations) throw new Error('Pas de notations pour cette matière');
   const sections = await chargerSections(matiere.notations);
   lecture = null;
+  modeAccueil(false);
+  progression.hidden = true;
   titre.textContent = `Notations · ${matiere.nom}`;
   retour.hidden = false;
   // Le retour ramène à la section qu'on lisait (ou à l'accueil).
