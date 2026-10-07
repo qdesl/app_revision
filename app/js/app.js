@@ -4,15 +4,19 @@
 //   #/                                       accueil, liste des matières et chapitres
 //   #/<doc>/<matière>/<chapitre>/<n>         section n de la fiche de révision (doc = fiche) ou du cours (doc = cours)
 //   #/notations/<matière>                    glossaire des notations de la matière, sur une seule page
+//   #/reviser/<matière>/<chapitre>           séance de révision du chapitre (questions)
 
 import { decouper } from './markdown.js';
 import { lire, ecrire } from './stockage.js';
 import { activerBalayage } from './geste.js';
+import { aReviser, enAvance, prochaineRevision } from './revision.js';
+import { lancerSeance } from './ecran-revision.js';
 import './reglages.js';
 import './horsligne.js';
 
 const RACINE_COURS = '../matieres/';
 const DOCUMENTS = { fiche: 'Fiche', cours: 'Cours complet' };
+const QUESTIONS_PAR_SEANCE = 10;
 
 const vue = document.getElementById('vue');
 const titre = document.getElementById('titre');
@@ -22,6 +26,7 @@ const progression = document.getElementById('progression');
 
 let index = null;            // contenu de matieres/index.json
 const cacheSections = {};    // chemin du .md → sections déjà découpées
+const cacheQuestions = {};   // chemin du .json → liste des questions
 let lecture = null;          // { lien(i), n, total } quand une section est affichée
 let pagePrecedente = '#/';   // pour revenir d'un glossaire à la section qu'on lisait
 let sensArrivee = 0;         // 1 : la nouvelle section arrive de droite, -1 : de gauche, 0 : sans animation
@@ -45,6 +50,16 @@ async function chargerSections(fichier) {
     cacheSections[fichier] = decouper(await reponse.text(), base);
   }
   return cacheSections[fichier];
+}
+
+async function chargerQuestions(chapitre) {
+  if (!chapitre.questions) return [];
+  if (!cacheQuestions[chapitre.questions]) {
+    const reponse = await fetch(RACINE_COURS + chapitre.questions);
+    if (!reponse.ok) throw new Error(`${chapitre.questions} introuvable (${reponse.status})`);
+    cacheQuestions[chapitre.questions] = (await reponse.json()).questions;
+  }
+  return cacheQuestions[chapitre.questions];
 }
 
 function trouverMatiere(idMatiere) {
@@ -132,14 +147,32 @@ function afficherAccueil() {
         ${m.chapitres.map(c => {
           const doc = docParDefaut(c);
           const a = avancement(doc, m.id, c.id);
-          return `<li><a href="${lienPosition(doc, m.id, c.id)}">
-            <span class="nom">${echapper(c.titre)}${c.fiche ? '<small class="etiquette">fiche</small>' : ''}</span>
-            <span class="detail">${a ? `${DOCUMENTS[doc]} · section ${a.n + 1} sur ${a.total}` : 'Pas encore commencé'}</span>
-            ${a ? jauge(a.pourcent) : ''}
-          </a></li>`;
+          return `<li class="carte">
+            <a class="ouvrir" href="${lienPosition(doc, m.id, c.id)}">
+              <span class="nom">${echapper(c.titre)}${c.fiche ? '<small class="etiquette">fiche</small>' : ''}</span>
+              <span class="detail">${a ? `${DOCUMENTS[doc]} · section ${a.n + 1} sur ${a.total}` : 'Pas encore commencé'}</span>
+              ${a ? jauge(a.pourcent) : ''}
+            </a>
+            ${c.questions ? `<a class="reviser" href="#/reviser/${m.id}/${c.id}" data-compte="${m.id}/${c.id}">Réviser</a>` : ''}
+          </li>`;
         }).join('')}
       </ul>
     </section>`).join('');
+  compterQuestionsDues();
+}
+
+// Nombre de questions à revoir sur chaque bouton « Réviser » (fichiers chargés après l'affichage).
+async function compterQuestionsDues() {
+  for (const bouton of vue.querySelectorAll('[data-compte]')) {
+    try {
+      const [idMatiere, idChapitre] = bouton.dataset.compte.split('/');
+      const { chapitre } = trouverChapitre(idMatiere, idChapitre);
+      const n = aReviser(await chargerQuestions(chapitre), idMatiere, idChapitre).length;
+      bouton.innerHTML = n ? `Réviser <span class="pastille">${n}</span>` : 'Réviser ✓';
+    } catch {
+      // fichier de questions manquant : le bouton reste tel quel
+    }
+  }
 }
 
 async function afficherSection(doc, idMatiere, idChapitre, n) {
@@ -160,7 +193,8 @@ async function afficherSection(doc, idMatiere, idChapitre, n) {
         `<a href="${lienPosition(id, idMatiere, idChapitre)}" aria-current="${id === doc}">${nom}</a>`).join('')}
     </nav>` : '';
 
-  const notations = matiere.notations ? `<a class="lien-notations" href="#/notations/${idMatiere}">Notations</a>` : '';
+  const notations = (matiere.notations ? `<a class="lien-notations" href="#/notations/${idMatiere}">Notations</a>` : '')
+    + (chapitre.questions ? `<a class="lien-notations" href="#/reviser/${idMatiere}/${idChapitre}">Réviser</a>` : '');
 
   titre.textContent = chapitre.titre;
   retour.hidden = false;
@@ -170,6 +204,7 @@ async function afficherSection(doc, idMatiere, idChapitre, n) {
     <article class="section${sensArrivee ? ` arrivee-${sensArrivee > 0 ? 'droite' : 'gauche'}` : ''}">${sections[n].html}</article>`;
   sensArrivee = 0;
   bas.hidden = false;
+  bas.onclick = null;
   bas.innerHTML = `
     <a class="precedent" href="${lien(n - 1)}" aria-disabled="${n === 0}" aria-label="Section précédente">‹ Préc.</a>
     <span class="compteur">${n + 1} / ${sections.length}</span>
@@ -191,6 +226,36 @@ async function afficherNotations(idMatiere) {
   bas.hidden = true;
   vue.innerHTML = `<article class="section">${sections.map(s => s.html).join('')}</article>`;
   window.scrollTo(0, 0);
+}
+
+async function afficherRevision(idMatiere, idChapitre, quandMeme = false) {
+  const { chapitre } = trouverChapitre(idMatiere, idChapitre);
+  const questions = await chargerQuestions(chapitre);
+  lecture = null;
+  modeAccueil(false);
+  titre.textContent = `Réviser · ${chapitre.titre}`;
+  retour.hidden = false;
+  retour.href = pagePrecedente.startsWith('#/reviser') ? '#/' : pagePrecedente;
+  bas.onclick = null;
+
+  const choisies = (quandMeme ? enAvance : aReviser)(questions, idMatiere, idChapitre).slice(0, QUESTIONS_PAR_SEANCE);
+  if (!choisies.length) {
+    progression.hidden = true;
+    const date = prochaineRevision(questions);
+    const quand = date ? new Date(date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) : null;
+    vue.innerHTML = `<section class="bilan">
+      <div class="score">✓</div>
+      <p class="bilan-texte">${questions.length ? 'Rien à revoir pour l\'instant.' : 'Pas encore de questions pour ce chapitre.'}</p>
+      ${quand ? `<p class="bilan-texte discret">Prochaine révision : ${quand}.</p>` : ''}
+    </section>`;
+    bas.hidden = !questions.length;
+    bas.innerHTML = `<button class="action principal" data-action="quand-meme">Réviser quand même</button>`;
+    bas.onclick = e => { if (e.target.closest('[data-action]')) afficherRevision(idMatiere, idChapitre, true); };
+    return;
+  }
+  lancerSeance({ vue, bas, progression }, choisies.map(q => ({ q, matiere: idMatiere, chapitre: idChapitre })), {
+    fin: () => { location.hash = retour.getAttribute('href'); },
+  });
 }
 
 const peutAller = sens => !!lecture && lecture.n + sens >= 0 && lecture.n + sens < lecture.total;
@@ -225,8 +290,9 @@ async function router() {
     const [page, ...args] = location.hash.replace(/^#\/?/, '').split('/').map(decodeURIComponent);
     if (DOCUMENTS[page]) await afficherSection(page, args[0], args[1], Number(args[2]) || 0);
     else if (page === 'notations') await afficherNotations(args[0]);
+    else if (page === 'reviser') await afficherRevision(args[0], args[1]);
     else afficherAccueil();
-    if (page !== 'notations') pagePrecedente = location.hash || '#/';
+    if (page !== 'notations' && page !== 'reviser') pagePrecedente = location.hash || '#/';
   } catch (erreur) {
     bas.hidden = true;
     vue.innerHTML = `<p class="erreur">Erreur : ${echapper(erreur.message)}</p>`;
