@@ -47,6 +47,23 @@ async function synchroniser() {
   if (resultat.modifies) proposerActualisation();
 }
 
+// Bouton « Installer » : Chrome prévient (beforeinstallprompt) quand l'app est installable.
+const boutonInstaller = document.getElementById('installer');
+let demandeInstallation = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  demandeInstallation = e;
+  boutonInstaller.hidden = false;
+});
+boutonInstaller.addEventListener('click', async () => {
+  if (!demandeInstallation) return;
+  demandeInstallation.prompt();
+  await demandeInstallation.userChoice;
+  demandeInstallation = null;
+  boutonInstaller.hidden = true;
+});
+window.addEventListener('appinstalled', () => { boutonInstaller.hidden = true; });
+
 if ('serviceWorker' in navigator) {
   afficherEtat(dernierEtat());
   navigator.serviceWorker.register('sw.js')

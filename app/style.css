@@ -80,6 +80,12 @@ main {
 .choix output { min-width: 2rem; text-align: center; }
 .etat-horsligne { margin: .5rem 0 0; color: var(--discret); font-size: 14px; }
 
+.installer {
+  display: block; width: calc(100% - 2rem); max-width: 40rem; margin: 1rem auto 0; padding: .9rem;
+  font: inherit; font-size: 16px; font-weight: 600; cursor: pointer;
+  color: var(--accent); background: var(--carte); border: 2px dashed var(--accent); border-radius: .7rem;
+}
+
 /* Bandeau « cours mis à jour », au-dessus des boutons du bas */
 .bandeau {
   position: fixed; left: 1rem; right: 1rem; z-index: 3;

@@ -8,7 +8,7 @@
 //
 // ⚠️ Changer VERSION à chaque ajout ou renommage d'un fichier de l'app (liste FICHIERS_APP).
 
-const VERSION = 'v1';
+const VERSION = 'v2';
 const CACHE_APP = `app-${VERSION}`;
 const CACHE_COURS = 'cours';
 const DELAI_RESEAU = 3000; // ms
