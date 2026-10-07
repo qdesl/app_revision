@@ -9,7 +9,8 @@
           "id": "optimisation",
           "titre": "Optimisation convexe",
           "fichier": "exemple/convertis/optimisation.md",
-          "fiche": "exemple/fiches/optimisation.md"
+          "fiche": "exemple/fiches/optimisation.md",
+          "questions": "exemple/questions/optimisation.json"
         }
       ]
     }

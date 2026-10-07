@@ -39,7 +39,15 @@ Pour chaque matière, `matieres/<matière>/organisation.md` (créé au premier t
 2. **Plan des chapitres** : déduit de **toutes** les sources (le cours, mais aussi l'ordre des TD et ce qui tombe en partiel), même si le cours n'en a pas. Chaque chapitre a un identifiant court (`gradient`, `dualite`…) réutilisé partout : `convertis/`, `fiches/`, `questions/`, `index.json`.
 3. **Trous et doublons** : chapitre sans cours (seulement des TD), deux versions d'un même poly, pages manquantes… signalés à l'utilisateur, pas devinés en silence.
 
-Un document qui couvre plusieurs chapitres est découpé par chapitre dans `convertis/`.
+**Rangement des fichiers convertis** (c'est ce qui décide de ce que l'app affiche) :
+
+- `convertis/<id>.md`, **directement** dans `convertis/` : **un chapitre** par fichier, avec son id (`convertis/gradient.md`). Un document qui couvre plusieurs chapitres est découpé.
+- `convertis/td/`, `convertis/partiels/`, `convertis/notes/`, `convertis/captures/`… : tout ce qui **n'est pas** un chapitre (TD, partiels, notes, captures transcrites). Ces fichiers servent à Claude (fiches, étalonnage, questions) mais **ne deviennent jamais des chapitres** de l'app.
+- `matiere.json` (facultatif) : `{"nom": "Optimisation", "ordre": ["convexite", "gradient"], "exclure": []}` — nom affiché, ordre des chapitres (sinon alphabétique), chapitres à masquer.
+
+## Index de l'app : `outils/generer_index.py`
+
+`matieres/index.json` n'est **plus écrit à la main** : après tout ajout ou renommage (chapitre, fiche, questions, notations), lancer `outils/generer_index.py`. Il reconstruit l'index depuis les dossiers (titre d'un chapitre = premier `# Titre` du cours converti), vérifie les fichiers de questions et **n'écrit rien en cas d'erreur**. `--verifier` contrôle sans écrire (code 1 si erreur ou index pas à jour).
 
 ## Notations
 
@@ -55,7 +63,7 @@ Une seule notation par objet, dans toute la matière. **Ordre de priorité** :
 - `matieres/<matière>/notations.md` : **glossaire unique** de la matière. Tableau `Symbole | Signification | Origine | Autres notations rencontrées` (origine : cours, tes notes, TD 2, Claude…). Le lire **avant** d'écrire, y ajouter tout nouveau symbole **avant** de l'utiliser.
 - Chaque fiche commence par une section `## Notations` qui reprend les symboles du chapitre : la fiche se lit seule.
 - Une source qui note autrement : on traduit dans la notation retenue, et on l'indique une fois (colonne « Autres notations » et/ou « noté $m$ dans le TD 2 »).
-- Le glossaire est déclaré dans `matieres/index.json` (champ `"notations"` de la matière) : l'app l'affiche via le bouton « Notations ».
+- Le glossaire est ajouté à l'index par `outils/generer_index.py` dès que `notations.md` existe : l'app l'affiche via le bouton « Notations ».
 
 ## Fiches de révision
 
@@ -75,7 +83,36 @@ Une fiche par chapitre, `matieres/<matière>/fiches/<chapitre>.md`, affichée pa
   | `> **Tombé en partiel (2024, ex. 2) :**`, `**Annale**` | orange | ce qui tombe |
   | `> **Complément (TD 2, ex. 4) :**`, `**Hors cours**` | violet | notion absente du cours |
 
-- Ajouter la fiche dans `matieres/index.json` (champ `"fiche"` du chapitre) et cocher la colonne « Fiche » de `suivi.md`.
+- Lancer `outils/generer_index.py` (la fiche est ajoutée à l'index toute seule) et cocher la colonne « Fiche » de `suivi.md`.
+
+## Questions
+
+Un fichier par chapitre : `matieres/<matière>/questions/<chapitre>.json`.
+
+```json
+{
+  "chapitre": "gradient",
+  "questions": [
+    {
+      "id": "gradient-001",
+      "niveau": 2,
+      "section": "Descente de gradient",
+      "enonce": "Markdown + LaTeX ($…$, $$…$$)",
+      "corrige": ["Étape 1 en Markdown", "Étape 2", "Conclusion"],
+      "source": "partiel 2025, ex. 2",
+      "tags": ["calcul"]
+    }
+  ]
+}
+```
+
+- **Obligatoires** : `id`, `niveau`, `enonce`, `corrige`. **Facultatifs** : `section` (titre de la section du cours ou de la fiche concernée), `source`, `tags`. `"chapitre"` = id du chapitre (nom du fichier).
+- **Niveaux** : `1` restitution (définition, énoncé, formule) · `2` application directe · `3` niveau partiel (même type et même difficulté que les annales, d'après `etalonnage.md`).
+- **Corrigé pas à pas** : une liste d'étapes courtes, chacune lisible seule (l'app les dévoile une par une).
+- **Ids stables** : `<chapitre>-001`, `-002`… uniques dans tout le dépôt, **jamais renumérotés ni réutilisés** (ils servent à suivre les résultats). Une question supprimée laisse un trou ; une nouvelle prend le numéro suivant.
+- **Notations** : celles de `notations.md`, comme pour les fiches ; tout symbole nouveau y est ajouté avant d'être utilisé.
+- Citer la `source` quand la question vient d'un TD ou d'un partiel.
+- Puis `outils/generer_index.py` : il vérifie le fichier (champs, niveaux, ids uniques) et l'ajoute à l'index ; cocher la colonne « Questions » de `suivi.md`.
 
 ## Graphiques
 

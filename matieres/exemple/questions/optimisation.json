@@ -1,0 +1,80 @@
+{
+  "chapitre": "optimisation",
+  "questions": [
+    {
+      "id": "optimisation-001",
+      "niveau": 1,
+      "section": "Fonctions convexes",
+      "enonce": "Donne la définition d'une fonction convexe $f : \\mathbb{R}^n \\to \\mathbb{R}$.",
+      "corrige": [
+        "$f$ est convexe si pour tous $x, y \\in \\mathbb{R}^n$ et tout $\\lambda \\in [0,1]$ :",
+        "$$f(\\lambda x + (1-\\lambda) y) \\le \\lambda f(x) + (1-\\lambda) f(y).$$",
+        "Interprétation : la corde entre $(x, f(x))$ et $(y, f(y))$ est au-dessus du graphe."
+      ],
+      "tags": ["définition"]
+    },
+    {
+      "id": "optimisation-002",
+      "niveau": 1,
+      "section": "Descente de gradient",
+      "enonce": "Écris l'itération de la descente de gradient de pas $\\eta$, et la vitesse de convergence quand $f$ est convexe et $L$-lisse avec $\\eta = 1/L$.",
+      "corrige": [
+        "Itération : $x_{k+1} = x_k - \\eta \\nabla f(x_k)$.",
+        "Avec $\\eta = 1/L$ : $f(x_k) - f(x^\\star) \\le \\dfrac{L \\lVert x_0 - x^\\star \\rVert^2}{2k}$, soit une vitesse en $O(1/k)$."
+      ],
+      "tags": ["formule"]
+    },
+    {
+      "id": "optimisation-003",
+      "niveau": 2,
+      "section": "Fonctions convexes",
+      "enonce": "Montre que $f(x) = a x^2$, avec $a > 0$, est convexe sur $\\mathbb{R}$.",
+      "corrige": [
+        "$f$ est deux fois dérivable : on utilise le critère de la hessienne (en dimension 1 : $f'' \\ge 0$).",
+        "$f'(x) = 2 a x$, puis $f''(x) = 2a$.",
+        "$a > 0$ donc $f''(x) = 2a \\ge 0$ pour tout $x$ : $f$ est convexe (et même $\\mu$-fortement convexe avec $\\mu = 2a$)."
+      ],
+      "source": "TD 1, ex. 3 (fictif)",
+      "tags": ["méthode"]
+    },
+    {
+      "id": "optimisation-004",
+      "niveau": 2,
+      "section": "Descente de gradient",
+      "enonce": "On applique la descente de gradient à $f(x) = a x^2$ avec $a = 1$, $\\eta = 0.1$ et $x_0 = 2$. Calcule $x_1$ et $x_2$.",
+      "corrige": [
+        "$\\nabla f(x) = 2 a x = 2x$, donc $x_{k+1} = x_k - 0.1 \\times 2 x_k = 0.8\\, x_k$.",
+        "$x_1 = 0.8 \\times 2 = 1.6$.",
+        "$x_2 = 0.8 \\times 1.6 = 1.28$."
+      ],
+      "tags": ["calcul"]
+    },
+    {
+      "id": "optimisation-005",
+      "niveau": 3,
+      "section": "Descente de gradient",
+      "enonce": "Soit $f(x) = a x^2$ avec $a > 0$. Pour quelles valeurs du pas $\\eta > 0$ la descente de gradient converge-t-elle vers $x^\\star = 0$ quel que soit $x_0$ ? Relie le résultat à la constante de lissité $L$.",
+      "corrige": [
+        "$\\nabla f(x) = 2 a x$, donc $x_{k+1} = x_k - 2 \\eta a x_k = (1 - 2 \\eta a)\\, x_k$, d'où $x_k = (1 - 2\\eta a)^k x_0$.",
+        "La suite tend vers $0$ pour tout $x_0$ si et seulement si $|1 - 2 \\eta a| < 1$.",
+        "Soit $-1 < 1 - 2\\eta a < 1$, c'est-à-dire $0 < \\eta < 1/a$.",
+        "Ici $\\nabla f$ est $L$-lipschitzien avec $L = 2a$ : la condition s'écrit $\\eta < 2/L$, ce qui retrouve le seuil de divergence du cours."
+      ],
+      "source": "partiel 2025, ex. 2 (fictif)",
+      "tags": ["partiel"]
+    },
+    {
+      "id": "optimisation-006",
+      "niveau": 3,
+      "section": "Fonctions convexes",
+      "enonce": "Pourquoi ne peut-on pas appliquer directement la descente de gradient à $f(x) = |x|$ ? Que se passe-t-il si, à la place de $\\nabla f(x)$, on utilise le signe de $x$ (qui vaut $1$ si $x > 0$ et $-1$ si $x < 0$), avec un pas $\\eta$ fixe et $x_0 = \\eta / 2$ ?",
+      "corrige": [
+        "$f$ est convexe mais pas dérivable en $0$, qui est justement le minimiseur $x^\\star$ : $\\nabla f(x^\\star)$ n'existe pas.",
+        "Avec le signe : $x_1 = \\eta/2 - \\eta = -\\eta/2$, puis $x_2 = -\\eta/2 + \\eta = \\eta/2$.",
+        "La suite oscille entre $\\pm \\eta/2$ sans jamais converger : avec un pas fixe, on ne s'approche pas de $x^\\star$ à mieux que $\\eta/2$.",
+        "Piège classique : vérifier la dérivabilité avant d'utiliser le gradient."
+      ],
+      "tags": ["piège"]
+    }
+  ]
+}
