@@ -135,6 +135,11 @@ function modeAccueil(actif) {
 
 const NOMS_MAITRISE = ['À découvrir', 'Restitution', 'Application', 'Niveau partiel'];
 
+// Chapitre complet = fiche + questions. Une matière publiée en cours de traitement (quota de
+// Claude épuisé…) a des chapitres incomplets : l'app le signale au lieu de laisser croire à un oubli.
+const chapitreComplet = c => !!(c.fiche && c.questions);
+const chapitresComplets = m => m.chapitres.filter(chapitreComplet).length;
+
 const pluriel = (n, mot) => `${n} ${mot}${n > 1 ? 's' : ''}`;
 const progressionChapitre = (m, c) => avancement(docParDefaut(c), m.id, c.id)?.pourcent ?? 0;
 const progressionMatiere = m => (m.chapitres.length
@@ -224,6 +229,7 @@ async function afficherAccueil(numero) {
         <a class="tuile teinte" href="#/matiere/${m.id}" style="--teinte:${teinteDe(m)}">
           <span class="tuile-haut">${icone('book-open')}${dues[i].total ? `<span class="pastille">${dues[i].total}</span>` : ''}</span>
           <strong>${echapper(m.nom)}</strong>
+          ${chapitresComplets(m) < m.chapitres.length ? '<span class="en-cours">en cours</span>' : ''}
           <span class="tuile-bas">
             <span class="detail">${pluriel(m.chapitres.length, 'chapitre')}</span>
             ${anneau(progressionMatiere(m))}
@@ -256,6 +262,12 @@ async function afficherMatiere(idMatiere, numero) {
       <p>${pluriel(m.chapitres.length, 'chapitre')} · ${total ? `${total} à revoir` : 'rien à revoir'}</p>
       ${m.notations ? `<a class="bouton-clair" href="#/notations/${m.id}">${icone('sigma')} Notations</a>` : ''}
     </header>
+    ${chapitresComplets(m) < m.chapitres.length ? `
+      <p class="avis-en-cours">${icone('clock')}<span><strong>Matière en cours de préparation</strong> :
+        ${{ 0: `aucun chapitre sur ${m.chapitres.length} n'est encore complet`,
+            1: `1 chapitre sur ${m.chapitres.length} est complet` }[chapitresComplets(m)]
+          ?? `${chapitresComplets(m)} chapitres sur ${m.chapitres.length} sont complets`} (fiche et questions).
+        La suite arrivera avec une prochaine mise à jour.</span></p>` : ''}
     <ul class="liste">
       ${m.chapitres.map((c, i) => {
         const doc = docParDefaut(c);
@@ -265,6 +277,7 @@ async function afficherMatiere(idMatiere, numero) {
           <a class="ouvrir" href="${lienPosition(doc, m.id, c.id)}">
             <span class="nom"><span class="numero">${i + 1}</span><span class="titre-chapitre">${echapper(c.titre)}</span>${icone('chevron-right')}</span>
             <span class="detail">${a ? `${DOCUMENTS[doc]} · section ${a.n + 1} sur ${a.total}` : 'Pas encore commencé'}</span>
+            ${chapitreComplet(c) ? '' : `<span class="a-venir">${[!c.fiche && 'Fiche à venir', !c.questions && 'Questions à venir'].filter(Boolean).join(' · ')}</span>`}
             ${jauge(a?.pourcent ?? 0)}
           </a>
           ${c.questions ? `<div class="pied-carte">

@@ -22,7 +22,17 @@ Dans l'ordre, en mettant `suivi.md` à jour à chaque étape (pour reprendre apr
 4. **Notations** → `notations.md`.
 5. **Découper** le cours converti en chapitres : `convertis/<id>.md` ; `matiere.json` (nom, teinte, ordre).
 6. **Chapitre par chapitre** (une conversation courte par chapitre) : fiche → `fiches/<id>.md`, questions → `questions/<id>.json`, graphiques si utiles.
-7. **Publier** : `outils/generer_index.py`, puis commit et `git push` (l'app se met à jour sur le téléphone).
+7. **Publier après CHAQUE chapitre** : `outils/publier.sh` (vérifie l'index, commit et push de `matieres/`). L'app se met à jour sur le téléphone.
+
+### Si le quota s'épuise en cours de route
+
+Rien ne doit casser, et ce qui est fini doit être en ligne :
+
+- **Écrire en brouillon** : une fiche ou des questions en cours d'écriture s'appellent `fiches/<id>.brouillon.md`, `questions/<id>.brouillon.json` (ignorés par Git, invisibles dans l'app). **Renommer** en `<id>.md` / `<id>.json` seulement une fois terminés et vérifiés. Même règle pour modifier une fiche déjà publiée : copie `.brouillon`, puis remplacement.
+- **Publier après chaque chapitre** (`outils/publier.sh`), puis mettre `suivi.md` à jour : une coupure ne fait perdre que le chapitre en cours.
+- **Filet de sécurité** : `.claude/settings.json` lance `outils/publier.sh --automatique` à la fin de chaque session et quand Claude s'arrête sur une erreur (quota épuisé…). Il ne publie que des fichiers terminés, et rien si l'index est invalide.
+- Dans l'app, une matière dont des chapitres n'ont pas encore fiche et questions est marquée « en cours », avec « Fiche à venir » / « Questions à venir » sur les chapitres concernés.
+- À la reprise : lire `suivi.md`, reprendre au premier chapitre non terminé ; un `.brouillon` qui traîne est le chapitre interrompu.
 
 ## Décisions à respecter
 

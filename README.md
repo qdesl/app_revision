@@ -68,6 +68,7 @@ Le script sauvegarde d'abord les fichiers locaux que GitHub remplace (`sauvegard
 | Commande | Rôle |
 |---|---|
 | `outils/convertir.py matieres/X` | Convertit `sources/` en Markdown : pandoc (`.tex`, `.docx`, `.ipynb`…) ou Marker (`.pdf`, scans, photos). Ne refait que ce qui a changé ; `--liste` pour voir sans rien faire. |
+| `outils/publier.sh` | Vérifie l'index, puis commit et push de ce qui est terminé dans `matieres/` (jamais les `*.brouillon.*`). Lancé aussi automatiquement à la fin de chaque session Claude Code et si Claude s'arrête sur une erreur (quota épuisé). |
 | `outils/generer_index.py` | Reconstruit `matieres/index.json` (ce que l'app affiche) et vérifie les questions ; `--verifier` sans rien écrire. |
 | `outils/figure.py` | Transforme les graphiques `figures/*.py` (matplotlib) et `figures/*.tex` (TikZ) en SVG. |
 | `outils/convertir_pdf.sh` | Lance Marker sur le GPU (PC fixe seulement). |

@@ -232,7 +232,19 @@ main { padding: .8rem 1rem; max-width: 42rem; margin: 0 auto; padding-bottom: ca
   color: var(--sur-accent); background: var(--accent); border-radius: 999px;
 }
 
+.en-cours {
+  align-self: flex-start; padding: .1rem .5rem; font-size: .7rem; font-weight: 700;
+  color: var(--partiel); background: color-mix(in srgb, var(--partiel) 13%, transparent); border-radius: 999px;
+}
+
 /* ---------- Page d'une matière ---------- */
+.avis-en-cours {
+  display: flex; gap: .6rem; align-items: flex-start; margin: 0 0 1rem; padding: .8rem 1rem; font-size: .85rem; line-height: 1.45;
+  background: color-mix(in srgb, var(--partiel) 9%, var(--surface)); border: 1px solid color-mix(in srgb, var(--partiel) 30%, var(--ligne));
+  border-radius: var(--rayon);
+}
+.avis-en-cours .icone { margin-top: .1rem; color: var(--partiel); }
+.a-venir { display: inline-block; margin: .35rem 0 0 2.5rem; font-size: .75rem; font-weight: 600; color: var(--partiel); }
 .entete-matiere { margin: -.8rem -1rem 1.2rem; padding: 1.4rem 1.2rem 1.3rem; background: linear-gradient(170deg, var(--accent-doux), transparent); }
 .entete-matiere h2 { margin: 0 0 .2rem; font-size: 1.7rem; font-weight: 800; letter-spacing: -.02em; }
 .entete-matiere p { margin: 0 0 .9rem; color: var(--discret); font-size: .9rem; }

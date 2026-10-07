@@ -1,0 +1,28 @@
+{
+  "hooks": {
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/outils/publier.sh --automatique",
+            "timeout": 120,
+            "statusMessage": "Publication de ce qui est terminé…"
+          }
+        ]
+      }
+    ],
+    "StopFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/outils/publier.sh --automatique",
+            "timeout": 120,
+            "statusMessage": "Arrêt sur erreur : publication de ce qui est terminé…"
+          }
+        ]
+      }
+    ]
+  }
+}

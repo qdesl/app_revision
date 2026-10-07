@@ -14,5 +14,10 @@ essais_marker/
 *.swp
 .~lock.*
 
-# Dossiers de travail de Claude Code (copies parallèles du dépôt)
-.claude/
+# Claude Code : copies de travail et réglages personnels (les réglages du projet,
+# .claude/settings.json, sont versionnés)
+.claude/worktrees/
+.claude/settings.local.json
+
+# Brouillons de Claude (fiches, questions en cours d'écriture) : jamais publiés
+*.brouillon.*
