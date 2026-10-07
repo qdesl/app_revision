@@ -2,13 +2,16 @@
 //
 // - App (HTML, CSS, JS, KaTeX) et cours : servis depuis le cache tout de suite, puis
 //   mis à jour en arrière-plan quand le réseau répond (« stale-while-revalidate »).
-// - matieres/index.json : réseau d'abord (3 s max), pour voir aussitôt les nouveaux chapitres.
+// - matieres/index.json (ou, site chiffré, acces.json et fichiers.json) : réseau d'abord (3 s max),
+//   pour voir aussitôt les nouveaux chapitres.
 // - Message « synchroniser » (envoyé par l'app au démarrage) : télécharge tous les fichiers
 //   listés dans index.json, même les chapitres jamais ouverts, et les images de leurs cours.
+//   Site chiffré (outils/chiffrer.py) : la liste vient de fichiers.json (noms et empreintes des
+//   fichiers chiffrés) ; seuls les fichiers dont l'empreinte a changé sont retéléchargés.
 //
 // ⚠️ Changer VERSION à chaque ajout ou renommage d'un fichier de l'app (liste FICHIERS_APP).
 
-const VERSION = 'v12';
+const VERSION = 'v13';
 const CACHE_APP = `app-${VERSION}`;
 const CACHE_COURS = 'cours';
 const DELAI_RESEAU = 3000; // ms
@@ -22,7 +25,7 @@ const POLICES_KATEX = [
 
 const FICHIERS_APP = [
   './', 'index.html', 'style.css', 'manifest.webmanifest',
-  'js/app.js', 'js/markdown.js', 'js/reglages.js', 'js/stockage.js', 'js/horsligne.js', 'js/geste.js', 'js/revision.js', 'js/ecran-revision.js', 'js/icones.js', 'js/feuille.js',
+  'js/app.js', 'js/markdown.js', 'js/reglages.js', 'js/stockage.js', 'js/horsligne.js', 'js/geste.js', 'js/revision.js', 'js/ecran-revision.js', 'js/icones.js', 'js/feuille.js', 'js/donnees.js',
   'vendor/jakarta/PlusJakartaSans-latin.woff2',
   'vendor/literata/Literata-latin.woff2', 'vendor/literata/Literata-latin-italique.woff2',
   'vendor/katex/katex.min.js', 'vendor/katex/katex.min.css', 'vendor/marked/marked.umd.js',
@@ -32,6 +35,8 @@ const FICHIERS_APP = [
 
 const RACINE_COURS = new URL('../matieres/', self.location).href;
 const URL_INDEX = RACINE_COURS + 'index.json';
+const URL_FICHIERS = RACINE_COURS + 'fichiers.json';
+const RESEAU_D_ABORD = [URL_INDEX, URL_FICHIERS, RACINE_COURS + 'acces.json'];
 
 self.addEventListener('install', evenement => {
   evenement.waitUntil(caches.open(CACHE_APP).then(cache => cache.addAll(FICHIERS_APP)));
@@ -51,7 +56,8 @@ self.addEventListener('fetch', evenement => {
   const requete = evenement.request;
   if (requete.method !== 'GET' || !requete.url.startsWith(self.location.origin)) return;
   const url = requete.url.split('#')[0].split('?')[0];
-  if (url === URL_INDEX) {
+  // ?frais=1 : l'index chiffré (son nom ne dit pas que c'est l'index), demandé par donnees.js.
+  if (RESEAU_D_ABORD.includes(url) || requete.url.includes('frais=1')) {
     evenement.respondWith(reseauDAbord(url));
   } else {
     const cache = url.startsWith(RACINE_COURS) ? CACHE_COURS : CACHE_APP;
@@ -106,7 +112,38 @@ function imagesDuMarkdown(texte, urlFichier) {
     .map(chemin => new URL(chemin, urlFichier).href);
 }
 
+// Site chiffré : tous les fichiers de fichiers.json ; ceux dont l'empreinte a changé sont
+// retéléchargés, ceux qui ont disparu sont retirés du téléphone.
+async function synchroniserChiffre(reponseListe) {
+  const cache = await caches.open(CACHE_COURS);
+  const liste = (await reponseListe.clone().json()).fichiers;
+  const ancienne = await cache.match(URL_FICHIERS);
+  const avant = ancienne ? (await ancienne.json()).fichiers : {};
+  let modifies = 0, echecs = 0;
+  for (const [nom, empreinte] of Object.entries(liste)) {
+    const url = RACINE_COURS + nom;
+    if (avant[nom] === empreinte && await cache.match(url)) continue;
+    try {
+      const reponse = await fetch(url, { cache: 'no-cache' });
+      if (!reponse.ok) throw new Error(reponse.status);
+      await cache.put(url, reponse);
+      if (avant[nom]) modifies++;
+    } catch {
+      echecs++;
+    }
+  }
+  for (const nom of Object.keys(avant)) {
+    if (!(nom in liste)) await cache.delete(RACINE_COURS + nom);
+  }
+  // Un nouveau chapitre change l'index (lui aussi dans la liste) : compté dans « modifies ».
+  if (!echecs) await cache.put(URL_FICHIERS, reponseListe);
+  return { fichiers: Object.keys(liste).length, modifies, echecs };
+}
+
 async function synchroniser() {
+  const reponseListe = await fetch(URL_FICHIERS, { cache: 'no-cache' }).catch(() => null);
+  if (reponseListe?.ok) return synchroniserChiffre(reponseListe);
+
   const cache = await caches.open(CACHE_COURS);
   const reponseIndex = await fetch(URL_INDEX, { cache: 'no-cache' });
   if (!reponseIndex.ok) throw new Error(`index.json : ${reponseIndex.status}`);

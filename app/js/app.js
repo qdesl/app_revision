@@ -14,10 +14,10 @@ import { aReviser, enAvance, prochaineRevision, serieDeJours, reponsesDuJour, ma
 import { lancerSeance } from './ecran-revision.js';
 import { icone } from './icones.js';
 import { creerFeuille } from './feuille.js';
+import { initialiser, deverrouiller, lireTexte, lireJSON, chargerImages, MotDePasseRequis, messageVerrou } from './donnees.js';
 import './reglages.js';
 import './horsligne.js';
 
-const RACINE_COURS = '../matieres/';
 const DOCUMENTS = { fiche: 'Fiche', cours: 'Cours complet' };
 const QUESTIONS_PAR_SEANCE = 10;
 
@@ -55,21 +55,15 @@ document.getElementById('bouton-reglages').innerHTML = icone('settings-2');
 
 const echapper = s => String(s).replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
 
+// Fichiers des cours : en clair ou chiffrés, voir donnees.js.
 async function chargerIndex() {
-  if (!index) {
-    const reponse = await fetch(RACINE_COURS + 'index.json', { cache: 'no-cache' });
-    if (!reponse.ok) throw new Error(`index.json introuvable (${reponse.status})`);
-    index = await reponse.json();
-  }
+  if (!index) index = await lireJSON('index.json');
   return index;
 }
 
 async function chargerSections(fichier) {
   if (!cacheSections[fichier]) {
-    const reponse = await fetch(RACINE_COURS + fichier);
-    if (!reponse.ok) throw new Error(`${fichier} introuvable (${reponse.status})`);
-    const base = RACINE_COURS + fichier.replace(/[^/]*$/, '');
-    cacheSections[fichier] = decouper(await reponse.text(), base);
+    cacheSections[fichier] = decouper(await lireTexte(fichier), fichier.replace(/[^/]*$/, ''));
   }
   return cacheSections[fichier];
 }
@@ -77,9 +71,7 @@ async function chargerSections(fichier) {
 async function chargerQuestions(chapitre) {
   if (!chapitre.questions) return [];
   if (!cacheQuestions[chapitre.questions]) {
-    const reponse = await fetch(RACINE_COURS + chapitre.questions);
-    if (!reponse.ok) throw new Error(`${chapitre.questions} introuvable (${reponse.status})`);
-    cacheQuestions[chapitre.questions] = (await reponse.json()).questions;
+    cacheQuestions[chapitre.questions] = (await lireJSON(chapitre.questions)).questions;
   }
   return cacheQuestions[chapitre.questions];
 }
@@ -321,6 +313,7 @@ async function afficherSection(doc, idMatiere, idChapitre, n) {
   vue.innerHTML = `
     ${onglets || notations ? `<div class="entete-lecture">${onglets}${notations}</div>` : ''}
     <article class="section${sensArrivee ? ` arrivee-${sensArrivee > 0 ? 'droite' : 'gauche'}` : ''}">${sections[n].html}</article>`;
+  chargerImages(vue);
   sensArrivee = 0;
   bas.hidden = false;
   bas.onclick = null;
@@ -365,6 +358,7 @@ async function afficherNotations(idMatiere) {
   retour.href = pagePrecedente.startsWith('#/notations') ? '#/' : pagePrecedente;
   bas.hidden = true;
   vue.innerHTML = `<article class="section">${sections.map(s => s.html).join('')}</article>`;
+  chargerImages(vue);
   window.scrollTo(0, 0);
 }
 
@@ -430,8 +424,44 @@ document.addEventListener('keydown', e => {
   if (e.key === 'ArrowLeft') allerA(-1);
 });
 
+// Cours chiffrés : mot de passe demandé une seule fois, puis gardé sur le téléphone.
+function afficherMotDePasse(message = messageVerrou()) {
+  modeAccueil(true);
+  appliquerTeinte(null);
+  titre.textContent = 'Révisions';
+  retour.hidden = true;
+  bas.hidden = true;
+  lecture = null;
+  vue.innerHTML = `
+    <form class="verrou" autocomplete="on">
+      <span class="verrou-icone">${icone('notebook-text')}</span>
+      <h2>Cours protégés</h2>
+      <p>Entre ton mot de passe une seule fois : il reste ensuite sur ce téléphone, et l'app marche hors ligne.</p>
+      <input type="text" name="username" value="revisions" autocomplete="username" hidden>
+      <input type="password" name="mot-de-passe" autocomplete="current-password" placeholder="Mot de passe" required>
+      <p class="verrou-erreur" role="alert">${echapper(message)}</p>
+      <button class="action principal" type="submit">Déverrouiller</button>
+    </form>`;
+  const formulaire = vue.querySelector('form');
+  formulaire.querySelector('input[type=password]').focus();
+  formulaire.addEventListener('submit', async e => {
+    e.preventDefault();
+    const bouton = formulaire.querySelector('button');
+    bouton.disabled = true;
+    bouton.textContent = 'Vérification…';
+    try {
+      await deverrouiller(formulaire.elements['mot-de-passe'].value);
+      router();
+    } catch (erreur) {
+      afficherMotDePasse(navigator.onLine || !(erreur instanceof TypeError)
+        ? erreur.message : 'Pas de réseau : la première ouverture demande une connexion.');
+    }
+  });
+}
+
 async function router() {
   try {
+    if (await initialiser() === 'mot-de-passe') return afficherMotDePasse();
     await chargerIndex();
     const [page, ...args] = location.hash.replace(/^#\/?/, '').split('/').map(decodeURIComponent);
     const numero = ++numeroNavigation;
@@ -442,6 +472,10 @@ async function router() {
     else await afficherAccueil(numero);
     if (page !== 'notations' && page !== 'reviser') pagePrecedente = location.hash || '#/';
   } catch (erreur) {
+    if (erreur instanceof MotDePasseRequis) {
+      index = null;
+      return afficherMotDePasse();
+    }
     bas.hidden = true;
     vue.innerHTML = `<p class="erreur">Erreur : ${echapper(erreur.message)}</p>`;
   }

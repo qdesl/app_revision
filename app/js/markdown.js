@@ -86,14 +86,20 @@ function colorerEncadres(html) {
   });
 }
 
-// Les liens et images relatifs pointent vers le dossier du fichier .md, pas vers l'app.
+// Liens et images relatifs : ils partent du dossier du fichier .md (base, relatif à matieres/).
+// Une image relative devient <img data-chemin="…"> : l'app la charge elle-même (donnees.js),
+// en clair ou déchiffrée. Un lien relatif pointe vers le fichier en clair.
+const MARQUE_IMAGE = '@@CHEMIN@@';
+
 function corrigerChemins(tokens, base) {
   marked.walkTokens(tokens, token => {
     if ((token.type === 'image' || token.type === 'link') && !/^([a-z]+:|\/|#)/i.test(token.href)) {
-      token.href = base + token.href;
+      token.href = (token.type === 'image' ? MARQUE_IMAGE : '../matieres/') + base + token.href;
     }
   });
 }
+
+const marquerImages = html => html.replaceAll(`src="${MARQUE_IMAGE}`, 'data-chemin="');
 
 // Point d'entrée : texte Markdown → [{ titre, niveau, html }]
 export function decouper(texte, base = '') {
@@ -107,7 +113,7 @@ export function decouper(texte, base = '') {
       .replace(/<p>(<img [^>]*alt="([^"]+)"[^>]*>)<\/p>/g, '<figure>$1<figcaption>$2</figcaption></figure>')
       // Dans l'attribut alt, une formule reste en texte (du HTML KaTeX le casserait).
       .replace(/alt="([^"]*)"/g, (_, alt) => `alt="${alt.replace(/@@MATH(\d+)@@/g, (_, n) => formules[n].tex.replace(/"/g, '&quot;'))}"`);
-    const html = remettreFormules(colorerEncadres(brut), formules)
+    const html = remettreFormules(colorerEncadres(marquerImages(brut)), formules)
       // Les tableaux larges défilent eux aussi sur le côté.
       .replace(/<table>/g, '<div class="defile"><table>').replace(/<\/table>/g, '</table></div>');
     return { titre, niveau, html };
