@@ -110,12 +110,17 @@ button { font: inherit; color: inherit; }
 main { padding: .8rem 1rem; max-width: 42rem; margin: 0 auto; padding-bottom: calc(var(--hauteur-bas) + 2rem + env(safe-area-inset-bottom)); }
 .accueil main { padding-bottom: 2rem; }
 
-/* ---------- Réglages ---------- */
+/* ---------- Réglages : panneau qui monte du bas ---------- */
+.voile { position: fixed; inset: 0; z-index: 5; background: rgb(0 0 0 / .35); animation: fondu 200ms ease; }
 .reglages {
-  position: sticky; top: 3.4rem; z-index: 2;
-  margin: 0 1rem; padding: .6rem 1rem; max-width: 40rem;
-  background: var(--surface); border: 1px solid var(--ligne); border-radius: var(--rayon); box-shadow: var(--ombre);
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 6;
+  max-width: 42rem; margin: 0 auto; padding: .4rem 1.2rem 1rem;
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  background: var(--surface); border-radius: 22px 22px 0 0; box-shadow: 0 -8px 30px rgb(0 0 0 / .2);
+  transition: transform 200ms ease; animation: monte 260ms cubic-bezier(.2, .8, .2, 1);
 }
+.poignee { width: 2.5rem; height: 5px; margin: .2rem auto .8rem; border-radius: 3px; background: var(--ligne); }
+.reglages .reglage { padding: .55rem 0; }
 .reglage { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .35rem 0; }
 .reglage > span { color: var(--discret); font-size: .9rem; }
 .choix { display: flex; align-items: center; gap: .3rem; padding: .2rem; background: var(--fond); border-radius: 999px; }
@@ -125,7 +130,7 @@ main { padding: .8rem 1rem; max-width: 42rem; margin: 0 auto; padding-bottom: ca
 }
 .choix button[aria-pressed="true"] { background: var(--surface); color: var(--texte); box-shadow: var(--ombre); }
 .choix output { min-width: 2rem; text-align: center; font-variant-numeric: tabular-nums; }
-.etat-horsligne { margin: .4rem 0 .1rem; color: var(--discret); font-size: .8rem; }
+.etat-horsligne { margin: .6rem 0 .1rem; padding-top: .7rem; border-top: 1px solid var(--ligne); color: var(--discret); font-size: .8rem; }
 
 /* ---------- Accueil ---------- */
 .reprise {
@@ -182,6 +187,7 @@ main { padding: .8rem 1rem; max-width: 42rem; margin: 0 auto; padding-bottom: ca
 .entete-lecture:not(:has(.onglets)) { justify-content: flex-end; }
 
 .section {
+  transition: transform 200ms ease, opacity 200ms ease;
   font-family: var(--police-lecture); font-size: var(--taille-texte); line-height: 1.68;
   overflow-wrap: break-word; hyphens: auto;
 }
@@ -257,6 +263,14 @@ main { padding: .8rem 1rem; max-width: 42rem; margin: 0 auto; padding-bottom: ca
   font-size: .95rem; font-weight: 600;
   background: var(--texte); color: var(--fond); box-shadow: 0 8px 24px rgb(0 0 0 / .25);
 }
+
+/* ---------- Animations ---------- */
+@keyframes fondu { from { opacity: 0; } }
+@keyframes monte { from { transform: translateY(100%); } }
+@keyframes arrivee-droite { from { opacity: 0; transform: translateX(40px); } }
+@keyframes arrivee-gauche { from { opacity: 0; transform: translateX(-40px); } }
+.section.arrivee-droite { animation: arrivee-droite 220ms cubic-bezier(.2, .8, .2, 1); }
+.section.arrivee-gauche { animation: arrivee-gauche 220ms cubic-bezier(.2, .8, .2, 1); }
 
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }

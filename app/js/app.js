@@ -7,6 +7,7 @@
 
 import { decouper } from './markdown.js';
 import { lire, ecrire } from './stockage.js';
+import { activerBalayage } from './geste.js';
 import './reglages.js';
 import './horsligne.js';
 
@@ -23,6 +24,7 @@ let index = null;            // contenu de matieres/index.json
 const cacheSections = {};    // chemin du .md → sections déjà découpées
 let lecture = null;          // { lien(i), n, total } quand une section est affichée
 let pagePrecedente = '#/';   // pour revenir d'un glossaire à la section qu'on lisait
+let sensArrivee = 0;         // 1 : la nouvelle section arrive de droite, -1 : de gauche, 0 : sans animation
 
 const echapper = s => String(s).replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
 
@@ -165,7 +167,8 @@ async function afficherSection(doc, idMatiere, idChapitre, n) {
   retour.href = '#/';
   vue.innerHTML = `
     ${onglets || notations ? `<div class="entete-lecture">${onglets}${notations}</div>` : ''}
-    <article class="section">${sections[n].html}</article>`;
+    <article class="section${sensArrivee ? ` arrivee-${sensArrivee > 0 ? 'droite' : 'gauche'}` : ''}">${sections[n].html}</article>`;
+  sensArrivee = 0;
   bas.hidden = false;
   bas.innerHTML = `
     <a class="precedent" href="${lien(n - 1)}" aria-disabled="${n === 0}" aria-label="Section précédente">‹ Préc.</a>
@@ -190,10 +193,12 @@ async function afficherNotations(idMatiere) {
   window.scrollTo(0, 0);
 }
 
+const peutAller = sens => !!lecture && lecture.n + sens >= 0 && lecture.n + sens < lecture.total;
+
 function allerA(sens) {
-  if (!lecture) return;
-  const i = lecture.n + sens;
-  if (i >= 0 && i < lecture.total) location.replace(lecture.lien(i));
+  if (!peutAller(sens)) return;
+  sensArrivee = sens;
+  location.replace(lecture.lien(lecture.n + sens));
 }
 
 // Précédent / suivant remplacent l'entrée de l'historique : le bouton « retour »
@@ -202,26 +207,11 @@ bas.addEventListener('click', e => {
   const lien = e.target.closest('a');
   if (!lien) return;
   e.preventDefault();
-  if (lien.getAttribute('aria-disabled') !== 'true') location.replace(lien.getAttribute('href'));
+  if (lien.classList.contains('suivant')) allerA(1);
+  if (lien.classList.contains('precedent')) allerA(-1);
 });
 
-// Balayage horizontal : section suivante / précédente.
-// Ignoré quand le doigt part d'une zone qui défile elle-même (équation, tableau, code).
-let depart = null;
-vue.addEventListener('touchstart', e => {
-  const t = e.touches[0];
-  depart = e.touches.length === 1 && !e.target.closest('.formule-bloc, .defile, pre')
-    ? { x: t.clientX, y: t.clientY, instant: Date.now() } : null;
-}, { passive: true });
-vue.addEventListener('touchend', e => {
-  if (!depart) return;
-  const t = e.changedTouches[0];
-  const dx = t.clientX - depart.x, dy = t.clientY - depart.y;
-  if (Math.abs(dx) > 70 && Math.abs(dx) > 2 * Math.abs(dy) && Date.now() - depart.instant < 600) {
-    allerA(dx < 0 ? 1 : -1);
-  }
-  depart = null;
-}, { passive: true });
+activerBalayage(vue, { cible: () => (lecture ? vue.querySelector('.section') : null), peutAller, aller: allerA });
 
 // Flèches du clavier (sur PC).
 document.addEventListener('keydown', e => {

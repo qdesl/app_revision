@@ -8,7 +8,7 @@
 //
 // ⚠️ Changer VERSION à chaque ajout ou renommage d'un fichier de l'app (liste FICHIERS_APP).
 
-const VERSION = 'v3';
+const VERSION = 'v4';
 const CACHE_APP = `app-${VERSION}`;
 const CACHE_COURS = 'cours';
 const DELAI_RESEAU = 3000; // ms
@@ -22,7 +22,7 @@ const POLICES_KATEX = [
 
 const FICHIERS_APP = [
   './', 'index.html', 'style.css', 'manifest.webmanifest',
-  'js/app.js', 'js/markdown.js', 'js/reglages.js', 'js/stockage.js', 'js/horsligne.js',
+  'js/app.js', 'js/markdown.js', 'js/reglages.js', 'js/stockage.js', 'js/horsligne.js', 'js/geste.js',
   'vendor/literata/Literata-latin.woff2', 'vendor/literata/Literata-latin-italique.woff2',
   'vendor/katex/katex.min.js', 'vendor/katex/katex.min.css', 'vendor/marked/marked.umd.js',
   'icones/icone-192.png', 'icones/icone-512.png', 'icones/icone-maskable-512.png', 'icones/icone-180.png',

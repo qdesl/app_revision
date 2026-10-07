@@ -56,8 +56,34 @@ choix.addEventListener('click', evenement => {
   if (bouton.dataset.taille) changerTaille(Number(bouton.dataset.taille));
 });
 
+// Panneau qui monte du bas de l'écran ; on le ferme en touchant à côté, en le tirant vers le bas
+// ou avec Échap.
+const voile = document.getElementById('voile');
+
+function ouvrir(ouvert) {
+  panneau.hidden = !ouvert;
+  voile.hidden = !ouvert;
+}
+
+voile.addEventListener('click', () => ouvrir(false));
+document.addEventListener('keydown', e => { if (e.key === 'Escape') ouvrir(false); });
+window.addEventListener('hashchange', () => ouvrir(false));
+
+let departY = null;
+panneau.addEventListener('touchstart', e => { departY = e.touches[0].clientY; }, { passive: true });
+panneau.addEventListener('touchmove', e => {
+  const dy = e.touches[0].clientY - departY;
+  if (dy > 0) { panneau.style.transition = 'none'; panneau.style.transform = `translateY(${dy}px)`; }
+}, { passive: true });
+panneau.addEventListener('touchend', e => {
+  const dy = e.changedTouches[0].clientY - departY;
+  panneau.style.transition = '';
+  panneau.style.transform = '';
+  if (dy > 60) ouvrir(false);
+}, { passive: true });
+
 document.getElementById('bouton-reglages').addEventListener('click', () => {
-  panneau.hidden = !panneau.hidden;
+  ouvrir(panneau.hidden);
 });
 
 appliquer();
