@@ -28,9 +28,10 @@ function changerTaille(sens) {
 }
 
 const panneau = document.getElementById('reglages');
+const choix = document.getElementById('reglages-choix');
 
 function dessinerPanneau() {
-  panneau.innerHTML = `
+  choix.innerHTML = `
     <div class="reglage">
       <span>Thème</span>
       <div class="choix">
@@ -48,7 +49,7 @@ function dessinerPanneau() {
     </div>`;
 }
 
-panneau.addEventListener('click', evenement => {
+choix.addEventListener('click', evenement => {
   const bouton = evenement.target.closest('button');
   if (!bouton) return;
   if (bouton.dataset.theme) changer({ theme: bouton.dataset.theme });

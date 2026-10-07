@@ -8,6 +8,7 @@
 import { decouper } from './markdown.js';
 import { lire, ecrire } from './stockage.js';
 import './reglages.js';
+import './horsligne.js';
 
 const RACINE_COURS = '../matieres/';
 const DOCUMENTS = { fiche: 'Fiche', cours: 'Cours complet' };

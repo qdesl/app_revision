@@ -78,6 +78,16 @@ main {
 }
 .choix button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--fond); }
 .choix output { min-width: 2rem; text-align: center; }
+.etat-horsligne { margin: .5rem 0 0; color: var(--discret); font-size: 14px; }
+
+/* Bandeau « cours mis à jour », au-dessus des boutons du bas */
+.bandeau {
+  position: fixed; left: 1rem; right: 1rem; z-index: 3;
+  bottom: calc(var(--hauteur-bas) + 1rem + env(safe-area-inset-bottom));
+  padding: .9rem; border: 0; border-radius: .7rem; cursor: pointer;
+  font: inherit; font-size: 16px; font-weight: 600;
+  background: var(--texte); color: var(--fond); box-shadow: 0 4px 16px rgb(0 0 0 / .25);
+}
 
 /* Reprise de la dernière lecture */
 .reprise {

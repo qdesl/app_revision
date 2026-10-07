@@ -23,6 +23,12 @@ App **perso** pour réviser ses cours dans les transports, sur un téléphone **
 - **pandoc 3.8** (système) pour `.tex`, `.docx`, `.ipynb`, `.md`.
 - Pas de Node.js : app en HTML/CSS/JS sans build, KaTeX embarqué.
 
+## Hors ligne (service worker)
+
+- `app/sw.js` garde l'app et **tous** les fichiers cités dans `matieres/index.json` (plus les images de leurs Markdown) sur le téléphone ; synchronisation à chaque ouverture avec réseau.
+- ⚠️ Ajout, suppression ou renommage d'un fichier de l'app (`app/js/…`, `app/vendor/…`) → mettre à jour `FICHIERS_APP` et **changer `VERSION`** dans `app/sw.js`. Les cours, eux, n'ont besoin que d'être dans `index.json`.
+- `.nojekyll` à la racine : sans lui, GitHub Pages ignore les fichiers commençant par `_` (images de Marker).
+
 ## Principe général : organiser à partir du désorganisé
 
 Les documents arrivent **en vrac** : mal nommés, mélangés, incomplets, sans plan clair. C'est à Claude de **produire la structure**, pas à l'utilisateur de la fournir.
