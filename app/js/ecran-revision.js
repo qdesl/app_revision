@@ -1,5 +1,6 @@
-// Écran de révision : une question à la fois, corrigé dévoilé étape par étape,
-// puis auto-évaluation « À revoir » / « Réussi ».
+// Écran de révision, façon cartes : on retourne la carte (énoncé → corrigé dévoilé étape
+// par étape), puis on la glisse à droite (réussi) ou à gauche (à revoir) — ou on utilise
+// les deux gros boutons.
 // Une question ratée revient plus loin dans la même séance (une fois).
 
 import { rendre } from './markdown.js';
@@ -24,26 +25,46 @@ export function lancerSeance(ecran, file, { fin }) {
     if (!file.length) return afficherBilan();
     const { q } = file[0];
     let etapesVisibles = 0;
+    let retournee = false;
 
     progression.hidden = false;
     progression.firstElementChild.style.width = `${(faites / (total + dejaReprises.size)) * 100}%`;
+    const meta = `
+      <div class="meta-question">
+        <span class="badge-niveau niveau-${q.niveau}">Niveau ${q.niveau} · ${NOMS_NIVEAUX[q.niveau]}</span>
+        ${q.section ? `<span class="section-question">${echapper(q.section)}</span>` : ''}
+      </div>`;
     vue.innerHTML = `
-      <article class="carte-question${sens ? ' arrivee-droite' : ''}">
-        <div class="meta-question">
-          <span class="badge-niveau niveau-${q.niveau}">Niveau ${q.niveau} · ${NOMS_NIVEAUX[q.niveau]}</span>
-          ${q.section ? `<span class="section-question">${echapper(q.section)}</span>` : ''}
-        </div>
-        <div class="section enonce">${rendre(q.enonce)}</div>
-        ${q.source ? `<p class="source-question">Source : ${echapper(q.source)}</p>` : ''}
-        <ol class="corrige" hidden></ol>
-      </article>`;
+      <div class="pile${file.length > 1 ? ' avec-suite' : ''}">
+        <article class="carte-question${sens ? ' arrivee-pile' : ''}">
+          <div class="faces">
+            <div class="face recto">
+              ${meta}
+              <div class="section enonce">${rendre(q.enonce)}</div>
+              ${q.source ? `<p class="source-question">Source : ${echapper(q.source)}</p>` : ''}
+              <p class="indice">${icone('rotate-ccw')} Touche la carte pour voir le corrigé</p>
+            </div>
+            <div class="face verso">
+              ${meta}
+              <div class="section rappel">${rendre(q.enonce)}</div>
+              <ol class="corrige"></ol>
+            </div>
+          </div>
+          <span class="tampon tampon-reussi">${icone('check')} Réussi</span>
+          <span class="tampon tampon-rate">${icone('rotate-ccw')} À revoir</span>
+        </article>
+      </div>
+      <p class="aide-glisser" hidden>${icone('chevron-left')} À revoir · glisse la carte · Réussi ${icone('chevron-right')}</p>`;
     window.scrollTo(0, 0);
+    const carte = vue.querySelector('.carte-question');
     const liste = vue.querySelector('.corrige');
+    const aide = vue.querySelector('.aide-glisser');
+    const fini = () => etapesVisibles >= q.corrige.length;
 
     const boutonsEtapes = () => {
       const reste = q.corrige.length - etapesVisibles;
-      bas.innerHTML = etapesVisibles === 0
-        ? `<button class="action principal" data-action="etape">Voir le corrigé</button>`
+      bas.innerHTML = !retournee
+        ? `<button class="action principal" data-action="etape">${icone('rotate-ccw')} Retourner la carte</button>`
         : `<button class="action discret" data-action="tout">Tout voir</button>
            <button class="action principal" data-action="etape">Étape suivante · ${reste}</button>`;
     };
@@ -53,14 +74,32 @@ export function lancerSeance(ecran, file, { fin }) {
         <button class="action reussi" data-action="reussi">${icone('check')} Réussi</button>`;
     };
     const montrerEtapes = jusqua => {
-      liste.hidden = false;
-      while (etapesVisibles < jusqua) {
+      if (!retournee) {
+        retournee = true;
+        carte.classList.add('retournee');
+      }
+      while (etapesVisibles < Math.min(jusqua, q.corrige.length)) {
         const li = document.createElement('li');
         li.innerHTML = rendre(q.corrige[etapesVisibles++]);
         liste.append(li);
       }
-      liste.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      if (etapesVisibles >= q.corrige.length) boutonsReponse(); else boutonsEtapes();
+      if (etapesVisibles > 1) liste.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      if (fini()) {
+        boutonsReponse();
+        aide.hidden = false;
+      } else {
+        boutonsEtapes();
+      }
+    };
+
+    // La carte s'envole à droite (réussi) ou à gauche (à revoir), puis on passe à la suivante.
+    const envoler = reussi => {
+      carte.classList.add('envol');
+      carte.style.transform = `translateX(${reussi ? 130 : -130}vw) rotate(${reussi ? 22 : -22}deg)`;
+      carte.style.setProperty('--tampon-reussi', reussi ? 1 : 0);
+      carte.style.setProperty('--tampon-rate', reussi ? 0 : 1);
+      bas.onclick = null;
+      setTimeout(() => repondre(reussi), 230);
     };
 
     bas.hidden = false;
@@ -69,8 +108,49 @@ export function lancerSeance(ecran, file, { fin }) {
       const action = e.target.closest('[data-action]')?.dataset.action;
       if (action === 'etape') montrerEtapes(etapesVisibles + 1);
       if (action === 'tout') montrerEtapes(q.corrige.length);
-      if (action === 'rate' || action === 'reussi') repondre(action === 'reussi');
+      if (action === 'rate' || action === 'reussi') envoler(action === 'reussi');
     };
+    carte.addEventListener('click', () => { if (!retournee) montrerEtapes(1); });
+
+    // Glisser la carte : seulement une fois le corrigé entier affiché.
+    let depart = null;
+    carte.addEventListener('touchstart', e => {
+      if (!fini() || e.touches.length !== 1 || e.target.closest('.formule-bloc, .defile, pre')) return;
+      depart = { x: e.touches[0].clientX, y: e.touches[0].clientY, instant: performance.now(), axe: null, dx: 0 };
+    }, { passive: true });
+    carte.addEventListener('touchmove', e => {
+      if (!depart) return;
+      const dx = e.touches[0].clientX - depart.x, dy = e.touches[0].clientY - depart.y;
+      if (!depart.axe) {
+        if (Math.hypot(dx, dy) < 10) return;
+        depart.axe = Math.abs(dx) > Math.abs(dy) * 1.2 ? 'h' : 'v';
+        if (depart.axe === 'h') carte.style.transition = 'none';
+      }
+      if (depart.axe !== 'h') return;
+      depart.dx = dx;
+      const part = Math.min(Math.abs(dx) / (window.innerWidth * 0.35), 1);
+      carte.style.transform = `translateX(${dx}px) rotate(${dx / 18}deg)`;
+      carte.style.setProperty('--tampon-reussi', dx > 0 ? part : 0);
+      carte.style.setProperty('--tampon-rate', dx < 0 ? part : 0);
+    }, { passive: true });
+    const lacher = () => {
+      if (!depart) return;
+      const { dx, instant, axe } = depart;
+      depart = null;
+      if (axe !== 'h') return;
+      carte.style.transition = '';
+      const vitesse = Math.abs(dx) / (performance.now() - instant);
+      if (Math.abs(dx) > window.innerWidth * 0.3 || (vitesse > 0.6 && Math.abs(dx) > 50)) {
+        navigator.vibrate?.(6);
+        envoler(dx > 0);
+      } else {
+        carte.style.transform = '';
+        carte.style.setProperty('--tampon-reussi', 0);
+        carte.style.setProperty('--tampon-rate', 0);
+      }
+    };
+    carte.addEventListener('touchend', lacher, { passive: true });
+    carte.addEventListener('touchcancel', lacher, { passive: true });
   }
 
   function repondre(reussi) {
@@ -78,7 +158,6 @@ export function lancerSeance(ecran, file, { fin }) {
     const { q, matiere, chapitre } = element;
     enregistrer(q, matiere, chapitre, reussi, { reprise: !!element.reprise });
     faites++;
-    navigator.vibrate?.(reussi ? 8 : [6, 40, 6]);
     if (reussi) {
       bilan.reussies++;
     } else {

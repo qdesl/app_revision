@@ -375,10 +375,47 @@ main { padding: .8rem 1rem; max-width: 42rem; margin: 0 auto; padding-bottom: ca
 @media (prefers-color-scheme: dark) { :root:not([data-theme="clair"]) .bas .action.reussi { color: var(--fond); } }
 
 /* ---------- Révision ---------- */
-.carte-question {
-  padding: 1.1rem 1.2rem; background: var(--surface); border: 1px solid var(--ligne);
-  border-radius: calc(var(--rayon) + 4px); box-shadow: var(--ombre);
+/* Carte : pile (une carte devinée derrière), deux faces qui pivotent en 3D */
+.pile { position: relative; margin-top: .4rem; }
+.pile.avec-suite::before {
+  content: ''; position: absolute; left: 6%; right: 6%; top: 10px; bottom: -10px; z-index: 0;
+  background: var(--surface); border: 1px solid var(--ligne); border-radius: calc(var(--rayon) + 4px); opacity: .6;
 }
+.carte-question {
+  position: relative; z-index: 1; perspective: 1400px; touch-action: pan-y;
+  transition: transform 230ms cubic-bezier(.3, .7, .3, 1), opacity 230ms ease;
+  --tampon-reussi: 0; --tampon-rate: 0;
+}
+.carte-question.envol { opacity: 0; pointer-events: none; }
+.faces { display: grid; transform-style: preserve-3d; transition: transform 480ms cubic-bezier(.3, .7, .2, 1); }
+.retournee .faces { transform: rotateY(180deg); }
+.face {
+  grid-area: 1 / 1; padding: 1.1rem 1.2rem 1.2rem; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  background: var(--surface); border: 1px solid var(--ligne); border-radius: calc(var(--rayon) + 4px); box-shadow: var(--ombre);
+}
+.recto { display: flex; flex-direction: column; min-height: 15rem; cursor: pointer; }
+.recto .enonce { flex: 1; }
+.verso { transform: rotateY(180deg); }
+.indice { display: flex; align-items: center; gap: .4rem; margin: 1rem 0 0; color: var(--discret); font-size: .8rem; font-weight: 600; }
+.indice .icone { width: 1em; height: 1em; }
+.rappel { padding: .6rem .8rem; font-size: .88em; color: var(--discret); background: var(--fond); border-radius: 10px; }
+.rappel > :last-child { margin-bottom: 0; }
+
+/* Tampons qui apparaissent quand on glisse la carte */
+.tampon {
+  position: absolute; top: 1.2rem; z-index: 2; display: inline-flex; align-items: center; gap: .3rem;
+  padding: .35rem .8rem; font-weight: 800; font-size: .9rem; letter-spacing: .04em; text-transform: uppercase;
+  border: 2.5px solid currentColor; border-radius: 10px; background: var(--surface); pointer-events: none;
+}
+.tampon-reussi { left: 1rem; color: var(--methode); opacity: var(--tampon-reussi); transform: rotate(-10deg); }
+.tampon-rate { right: 1rem; color: var(--piege); opacity: var(--tampon-rate); transform: rotate(10deg); }
+.aide-glisser {
+  display: flex; align-items: center; justify-content: center; gap: .3rem; margin: 1.1rem 0 0;
+  color: var(--discret); font-size: .8rem; font-weight: 600; animation: fondu 300ms ease;
+}
+.aide-glisser .icone { width: 1em; height: 1em; }
+@keyframes arrivee-pile { from { opacity: 0; transform: translateY(14px) scale(.97); } }
+.carte-question.arrivee-pile { animation: arrivee-pile 260ms cubic-bezier(.2, .8, .2, 1); }
 .meta-question { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .6rem; margin-bottom: .8rem; }
 .badge-niveau {
   display: inline-block; padding: .15rem .6rem; font-size: .75rem; font-weight: 700; border-radius: 999px;
@@ -419,7 +456,7 @@ main { padding: .8rem 1rem; max-width: 42rem; margin: 0 auto; padding-bottom: ca
 }
 .texte-ratee { flex: 1; min-width: 0; }
 .texte-ratee > :last-child { margin-bottom: 0; }
-.bilan.arrivee-droite, .carte-question.arrivee-droite { animation: arrivee-droite 220ms cubic-bezier(.2, .8, .2, 1); }
+.bilan.arrivee-droite { animation: arrivee-droite 220ms cubic-bezier(.2, .8, .2, 1); }
 
 /* Bandeau « cours mis à jour », au-dessus des boutons du bas */
 .bandeau {
