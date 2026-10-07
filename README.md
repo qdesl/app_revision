@@ -44,12 +44,18 @@ Les progrès sont gardés **sur le téléphone** (pas de compte, rien n'est envo
 
 Le dossier `~/Workspace/app_revision` du PC fixe existe déjà (avec `.venv/`, `.venv-vllm/`, `outils/convertir_pdf.sh`…). Pour le relier au dépôt **sans rien perdre** :
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/qdesl/app_revision/main/outils/relier_pc_fixe.sh -o /tmp/relier.sh
-bash /tmp/relier.sh ~/Workspace/app_revision
-```
+1. Le dépôt est **privé** : créer une clé SSH pour ce PC et l'enregistrer sur GitHub.
+   ```bash
+   ssh-keygen -t ed25519 -C "PC fixe"     # Entrée à chaque question
+   cat ~/.ssh/id_ed25519.pub              # à coller dans https://github.com/settings/keys → New SSH key
+   ```
+2. Relier le dossier :
+   ```bash
+   git clone git@github.com:qdesl/app_revision.git /tmp/app_revision_script
+   bash /tmp/app_revision_script/outils/relier_pc_fixe.sh ~/Workspace/app_revision
+   ```
 
-Le script sauvegarde d'abord les fichiers locaux que GitHub remplace (`sauvegarde_avant_git_<date>/`), laisse intact tout le reste, puis affiche les dernières étapes : ajouter `convertir_pdf.sh` au dépôt, créer une clé SSH pour pouvoir pousser.
+Le script sauvegarde d'abord les fichiers locaux que GitHub remplace (`sauvegarde_avant_git_<date>/`), laisse intact tout le reste, puis affiche les dernières étapes (ajouter `convertir_pdf.sh` au dépôt, nom de l'auteur des commits).
 
 ### Ajouter une matière
 
@@ -72,6 +78,7 @@ Le script sauvegarde d'abord les fichiers locaux que GitHub remplace (`sauvegard
 | `outils/generer_index.py` | Reconstruit `matieres/index.json` (ce que l'app affiche) et vérifie les questions ; `--verifier` sans rien écrire. |
 | `outils/figure.py` | Transforme les graphiques `figures/*.py` (matplotlib) et `figures/*.tex` (TikZ) en SVG. |
 | `outils/convertir_pdf.sh` | Lance Marker sur le GPU (PC fixe seulement). |
+| `outils/chiffrer.py` | Construit le site avec les cours chiffrés (lancé par GitHub Actions à chaque push ; en local : `MOT_DE_PASSE_COURS=… outils/chiffrer.py`). |
 | `outils/relier_pc_fixe.sh` | Relie une première fois le dossier du PC fixe à GitHub. |
 | `outils/icones.py` | Redessine les icônes de l'app. |
 
@@ -96,12 +103,17 @@ matieres/
 outils/                 ← scripts
 ```
 
-## Ce qui est public
+## Confidentialité : cours chiffrés
 
-Le dépôt et l'app sont **publics**. Les documents d'origine (`sources/`) ne sont **jamais** envoyés sur GitHub. En revanche, tout ce que l'app affiche l'est : les cours convertis, les fiches, les questions et les graphiques. Ils sont visibles par quiconque a le lien.
+- Le **dépôt est privé** : cours convertis, fiches et questions y sont en clair, et lui sert de sauvegarde. Les documents d'origine (`sources/`) n'y vont **jamais**.
+- Le **site** (GitHub Pages) est public par nature, mais les cours y sont **chiffrés** (AES-256-GCM, clé tirée d'un mot de passe par PBKDF2) : à chaque push, GitHub Actions (`.github/workflows/publier.yml`) lance `outils/chiffrer.py` avec le secret `MOT_DE_PASSE_COURS`. Les noms des fichiers et des matières sont chiffrés aussi. Seule l'app (le code, sans aucun cours) est en clair.
+- Sur le téléphone, le mot de passe est demandé **une fois** ; la clé reste ensuite sur le téléphone (l'app marche hors ligne).
+- **Changer de mot de passe** : modifier le secret `MOT_DE_PASSE_COURS` sur GitHub, puis relancer la publication (onglet Actions → « Publier le site » → Run workflow). Le téléphone affichera « Le mot de passe a changé ».
+- Ne **jamais** modifier `matieres/chiffrement.json` (le sel) : le téléphone redemanderait le mot de passe.
 
 ## Développement
 
-- Tester en local : `python3 -m http.server` à la racine, puis ouvrir http://localhost:8000/app/.
+- Tester en local : `python3 -m http.server` à la racine, puis ouvrir http://localhost:8000/app/ (cours en clair).
+- Tester la version chiffrée : `MOT_DE_PASSE_COURS=… outils/chiffrer.py`, puis `python3 -m http.server` dans `_site/`.
 - Après l'ajout, la suppression ou le renommage d'un fichier de `app/` : mettre à jour `FICHIERS_APP` et **changer `VERSION`** dans `app/sw.js`, sinon le téléphone garde l'ancienne version.
 - Développement étape par étape : un commit testé par étape (voir l'historique Git).

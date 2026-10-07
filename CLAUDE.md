@@ -44,8 +44,10 @@ Rien ne doit casser, et ce qui est fini doit être en ligne :
 
 ## Dépôt
 
-- GitHub (public) : https://github.com/qdesl/app_revision — la PWA y est hébergée (GitHub Pages).
-- `matieres/*/sources/` est dans `.gitignore` : les documents bruts des profs ne sont **jamais** publiés.
+- GitHub (**privé**) : https://github.com/qdesl/app_revision. La PWA est publiée sur GitHub Pages par `.github/workflows/publier.yml` : l'app en clair, les cours **chiffrés** par `outils/chiffrer.py` (secret `MOT_DE_PASSE_COURS`). Le site public ne contient donc aucun cours lisible.
+- `matieres/*/sources/` est dans `.gitignore` : les documents bruts des profs ne sont **jamais** envoyés, même dans le dépôt privé.
+- Ne **jamais** modifier `matieres/chiffrement.json` (sel du chiffrement), ni mettre le mot de passe dans un fichier du dépôt.
+- L'app lit tous les fichiers des cours par `app/js/donnees.js` (en clair en local, déchiffrés sur le site) : ne jamais faire de `fetch` direct vers `matieres/` ailleurs.
 - Développement **étape par étape** : un commit testé par étape, message « Étape N : … ».
 
 ## Outils

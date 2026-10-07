@@ -6,13 +6,16 @@
 #   - tout ce que GitHub ne connaît pas (.venv/, convertir_pdf.sh, essais_marker/, sources…)
 #     reste en place, intact.
 #
-# Usage (le dossier n'a pas encore ce script : on le télécharge) :
-#   curl -fsSL https://raw.githubusercontent.com/qdesl/app_revision/main/outils/relier_pc_fixe.sh -o /tmp/relier.sh
-#   bash /tmp/relier.sh ~/Workspace/app_revision
+# Le dépôt est privé : il faut d'abord une clé SSH de ce PC enregistrée sur GitHub
+# (ssh-keygen -t ed25519, puis coller ~/.ssh/id_ed25519.pub dans https://github.com/settings/keys).
+#
+# Usage (le dossier n'a pas encore ce script : on le récupère d'abord à part) :
+#   git clone git@github.com:qdesl/app_revision.git /tmp/app_revision_script
+#   bash /tmp/app_revision_script/outils/relier_pc_fixe.sh ~/Workspace/app_revision
 set -euo pipefail
 
 DOSSIER=${1:-.}
-DEPOT=${DEPOT:-https://github.com/qdesl/app_revision.git}
+DEPOT=${DEPOT:-git@github.com:qdesl/app_revision.git}
 BRANCHE=main
 
 cd "$DOSSIER"
@@ -61,7 +64,5 @@ git status --short | sed 's/^/   /' || true
 echo
 echo "Étapes suivantes :"
 echo "  1. Ajouter le script Marker au dépôt :  git add outils/convertir_pdf.sh && git commit -m 'Ajoute le script Marker'"
-echo "  2. Pour pouvoir pousser (git push), une clé SSH de ce PC sur GitHub :"
-echo "       ssh-keygen -t ed25519 -C \"PC fixe\"   puis coller ~/.ssh/id_ed25519.pub dans"
-echo "       https://github.com/settings/keys, et :  git remote set-url origin git@github.com:qdesl/app_revision.git"
-echo "  3. Nom de l'auteur des commits :  git config user.name qdesl && git config user.email qdesl@users.noreply.github.com"
+echo "  2. Nom de l'auteur des commits :  git config user.name qdesl && git config user.email qdesl@users.noreply.github.com"
+echo "  3. Supprimer la copie temporaire du script :  rm -rf /tmp/app_revision_script"

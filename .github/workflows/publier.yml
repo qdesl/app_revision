@@ -1,0 +1,50 @@
+# Publie le site sur GitHub Pages à chaque push sur main : l'app en clair, les cours CHIFFRÉS
+# avec le secret MOT_DE_PASSE_COURS (Settings → Secrets and variables → Actions).
+# Sans ce secret, ou si l'index est invalide, rien n'est publié : le site précédent reste en ligne
+# (jamais de cours en clair sur le site).
+name: Publier le site (cours chiffrés)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  publier:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploiement.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Bibliothèque de chiffrement
+        run: pip install cryptography
+      - name: Vérifier l'index des cours
+        run: python outils/generer_index.py --verifier
+      - name: Construire le site avec les cours chiffrés
+        env:
+          MOT_DE_PASSE_COURS: ${{ secrets.MOT_DE_PASSE_COURS }}
+        run: python outils/chiffrer.py --sortie _site
+      - name: Vérifier qu'aucun cours n'est en clair dans le site
+        run: |
+          if find _site/matieres -name '*.md' -o -name 'index.json' | grep -q .; then
+            echo "❌ Fichier de cours en clair dans _site/matieres : publication annulée."; exit 1
+          fi
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+      - id: deploiement
+        uses: actions/deploy-pages@v5

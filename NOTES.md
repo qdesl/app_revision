@@ -36,7 +36,8 @@ Commencé le 2026-10-06. Le 2026-10-07, la PWA a été codée (étapes 1 à 20, 
 | Organisation (2026-10-07) | Claude **organise à partir du désorganisé** : `organisation.md` par matière (inventaire des sources, plan des chapitres, trous et doublons) | Les documents arrivent en vrac ; l'inventaire évite de relire les sources |
 | Notations (2026-10-07) | Priorité : cours > notes de l'utilisateur > TD/partiels > choix de Claude ; **tout symbole défini** dans `notations.md` (glossaire unique) et en tête de chaque fiche | Cohérence entre cours, TD, partiels et fiches |
 | Niveau et sources (2026-10-07) | Fiches et questions au niveau **M2 d'école d'ingénieur** ; toute extrapolation **sourcée** dans un commentaire invisible (`<!-- source : … -->`, champ `reference` des questions), jamais de référence inventée | Situer la difficulté ; pouvoir vérifier chaque ajout sans encombrer l'app |
-| Dépôt (2026-10-07) | GitHub **public** `qdesl/app_revision` ; `sources/` jamais publié | GitHub Pages gratuit ; documents des profs gardés en local |
+| Confidentialité (2026-10-07) | Dépôt **privé** (Student Pack) ; site GitHub Pages publié par GitHub Actions avec les cours **chiffrés** (AES-256-GCM, PBKDF2 600 000 itérations, noms de fichiers chiffrés) ; mot de passe demandé une fois sur le téléphone | Rendre le dépôt privé ne cache pas le site : seul le chiffrement protège les cours ; garder le hors-ligne |
+| Dépôt (2026-10-07, remplacé : voir Confidentialité) | GitHub **public** `qdesl/app_revision` ; `sources/` jamais publié | GitHub Pages gratuit ; documents des profs gardés en local |
 
 ## 4. Fonctionnement prévu
 
