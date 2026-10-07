@@ -1,0 +1,11 @@
+{
+  "matieres": [
+    {
+      "id": "exemple",
+      "nom": "Exemple",
+      "chapitres": [
+        { "id": "optimisation", "titre": "Optimisation convexe", "fichier": "exemple/convertis/optimisation.md" }
+      ]
+    }
+  ]
+}

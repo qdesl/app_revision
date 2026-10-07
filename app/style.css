@@ -1,0 +1,65 @@
+:root {
+  --fond: #fbfaf7;
+  --texte: #1d1d1f;
+  --discret: #6b6b70;
+  --ligne: #e3e1dc;
+  --accent: #2f5fd0;
+  --carte: #ffffff;
+  --taille-texte: 18px;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--fond);
+  color: var(--texte);
+  font: var(--taille-texte)/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Barre du haut */
+.barre {
+  position: sticky; top: 0; z-index: 2;
+  display: flex; align-items: center; gap: .5rem;
+  padding: .6rem 1rem; padding-top: max(.6rem, env(safe-area-inset-top));
+  background: var(--fond); border-bottom: 1px solid var(--ligne);
+}
+.barre h1 { margin: 0; font-size: 1.05rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.barre-retour { font-size: 2rem; line-height: 1; color: var(--accent); text-decoration: none; padding: 0 .4rem; }
+
+main { padding: 1rem; max-width: 42rem; margin: 0 auto; }
+
+/* Accueil : liste des matières et chapitres */
+.matiere h2 { font-size: 1.1rem; margin: 1.2rem 0 .5rem; }
+.liste { list-style: none; margin: 0; padding: 0; }
+.liste a {
+  display: block; padding: .8rem 1rem; margin-bottom: .5rem;
+  background: var(--carte); border: 1px solid var(--ligne); border-radius: .6rem;
+  color: inherit; text-decoration: none;
+}
+.vide, .erreur { color: var(--discret); }
+
+/* Lecture */
+.section { overflow-wrap: break-word; }
+.section h1, .section h2, .section h3 { line-height: 1.25; }
+.section img { max-width: 100%; height: auto; }
+.section pre { overflow-x: auto; padding: .8rem; background: var(--carte); border: 1px solid var(--ligne); border-radius: .4rem; font-size: .85em; }
+.section code { font-size: .9em; }
+.section blockquote { margin: 1rem 0; padding: .2rem 1rem; border-left: 4px solid var(--accent); background: var(--carte); }
+
+/* Équations et tableaux trop larges : défilement horizontal au lieu de rétrécir */
+.formule-bloc, .defile { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; margin: 1rem 0; }
+.formule-bloc .katex-display { margin: 0; padding: .3rem 0; }
+.section table { border-collapse: collapse; }
+.section th, .section td { border: 1px solid var(--ligne); padding: .3rem .6rem; }
+
+.position { color: var(--discret); font-size: .85rem; margin: 0 0 .5rem; }
+
+.navigation { display: flex; gap: .6rem; margin-top: 2rem; }
+.navigation a {
+  flex: 1; text-align: center; padding: .9rem; border-radius: .6rem;
+  background: var(--accent); color: #fff; text-decoration: none; font-weight: 600;
+}
+.navigation a[aria-disabled="true"] { opacity: .35; pointer-events: none; }
