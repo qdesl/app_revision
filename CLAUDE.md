@@ -23,6 +23,18 @@ App **perso** pour réviser ses cours dans les transports, sur un téléphone **
 - **pandoc 3.8** (système) pour `.tex`, `.docx`, `.ipynb`, `.md`.
 - Pas de Node.js : app en HTML/CSS/JS sans build, KaTeX embarqué.
 
+## Graphiques
+
+Claude peut créer des graphiques pour illustrer un cours (courbes, schémas, figures TikZ des `.tex` que pandoc ignore) :
+
+1. Écrire la source dans `matieres/<matière>/figures/` :
+   - `<nom>.py` : script **matplotlib**, sans `savefig` ni `show` (le style lisible sur téléphone est appliqué automatiquement) ;
+   - `<nom>.tex` : dessin **TikZ / pgfplots**, seul (`\begin{tikzpicture}…`) ou document complet.
+2. Lancer `outils/figure.py` → produit `<nom>.svg` à côté de la source (seules les figures modifiées sont refaites).
+3. L'insérer dans le cours converti : `![Légende courte](../figures/<nom>.svg)` (la légende s'affiche sous la figure).
+
+Garder la source : c'est elle qu'on corrige, jamais le SVG. Pas de couleur de fond (SVG transparent, pour le mode sombre).
+
 ## Façon de travailler
 
 - Répondre en **français**.

@@ -20,6 +20,8 @@ On part de $x_0$ et on itère avec un pas $\eta > 0$ :
 
 $$x_{k+1} = x_k - \eta \nabla f(x_k)$$
 
+![Itérés de la descente pour deux pas : petit pas, convergence lente ; grand pas, oscillations.](../figures/descente.svg)
+
 **Théorème 1.** Si $f$ est convexe et $L$-lisse, avec $\eta = 1/L$, alors
 
 $$

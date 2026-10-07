@@ -84,7 +84,12 @@ export function decouper(texte, base = '') {
   corrigerChemins(tokens, base);
   return grouperEnSections(tokens).map(({ titre, niveau, tokens }) => {
     tokens.links = {};
-    const html = remettreFormules(marked.parser(tokens), formules)
+    const brut = marked.parser(tokens)
+      // Une image seule dans son paragraphe devient une figure légendée.
+      .replace(/<p>(<img [^>]*alt="([^"]+)"[^>]*>)<\/p>/g, '<figure>$1<figcaption>$2</figcaption></figure>')
+      // Dans l'attribut alt, une formule reste en texte (du HTML KaTeX le casserait).
+      .replace(/alt="([^"]*)"/g, (_, alt) => `alt="${alt.replace(/@@MATH(\d+)@@/g, (_, n) => formules[n].tex.replace(/"/g, '&quot;'))}"`);
+    const html = remettreFormules(brut, formules)
       // Les tableaux larges défilent eux aussi sur le côté.
       .replace(/<table>/g, '<div class="defile"><table>').replace(/<\/table>/g, '</table></div>');
     return { titre, niveau, html };

@@ -45,6 +45,8 @@ main { padding: 1rem; max-width: 42rem; margin: 0 auto; }
 .section { overflow-wrap: break-word; }
 .section h1, .section h2, .section h3 { line-height: 1.25; }
 .section img { max-width: 100%; height: auto; }
+.section figure { margin: 1.2rem 0; text-align: center; }
+.section figcaption { color: var(--discret); font-size: .85em; line-height: 1.4; margin-top: .3rem; }
 .section pre { overflow-x: auto; padding: .8rem; background: var(--carte); border: 1px solid var(--ligne); border-radius: .4rem; font-size: .85em; }
 .section code { font-size: .9em; }
 .section blockquote { margin: 1rem 0; padding: .2rem 1rem; border-left: 4px solid var(--accent); background: var(--carte); }
