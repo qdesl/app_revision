@@ -3,6 +3,7 @@
 // Adresses (dans le #) :
 //   #/                                       accueil, liste des matières et chapitres
 //   #/<doc>/<matière>/<chapitre>/<n>         section n de la fiche de révision (doc = fiche) ou du cours (doc = cours)
+//   #/notations/<matière>                    glossaire des notations de la matière, sur une seule page
 
 import { decouper } from './markdown.js';
 import { lire, ecrire } from './stockage.js';
@@ -19,6 +20,7 @@ const bas = document.getElementById('bas');
 let index = null;            // contenu de matieres/index.json
 const cacheSections = {};    // chemin du .md → sections déjà découpées
 let lecture = null;          // { lien(i), n, total } quand une section est affichée
+let pagePrecedente = '#/';   // pour revenir d'un glossaire à la section qu'on lisait
 
 const echapper = s => String(s).replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
 
@@ -39,6 +41,12 @@ async function chargerSections(fichier) {
     cacheSections[fichier] = decouper(await reponse.text(), base);
   }
   return cacheSections[fichier];
+}
+
+function trouverMatiere(idMatiere) {
+  const matiere = index.matieres.find(m => m.id === idMatiere);
+  if (!matiere) throw new Error('Matière introuvable');
+  return matiere;
 }
 
 function trouverChapitre(idMatiere, idChapitre) {
@@ -68,6 +76,7 @@ function memoriserPosition(doc, idMatiere, idChapitre, n) {
 function afficherAccueil() {
   titre.textContent = 'Révisions';
   retour.hidden = true;
+  retour.href = '#/';
   bas.hidden = true;
   lecture = null;
   if (!index.matieres.length) {
@@ -91,7 +100,7 @@ function afficherAccueil() {
 
   vue.innerHTML = reprise + index.matieres.map(m => `
     <section class="matiere">
-      <h2>${echapper(m.nom)}</h2>
+      <h2>${echapper(m.nom)}${m.notations ? ` <a class="lien-notations" href="#/notations/${m.id}">Notations</a>` : ''}</h2>
       <ul class="liste">
         ${m.chapitres.map(c => `<li><a href="${lienPosition(docParDefaut(c), m.id, c.id)}">${echapper(c.titre)}
           ${c.fiche ? '<small class="etiquette">fiche</small>' : ''}</a></li>`).join('')}
@@ -100,7 +109,7 @@ function afficherAccueil() {
 }
 
 async function afficherSection(doc, idMatiere, idChapitre, n) {
-  const { chapitre } = trouverChapitre(idMatiere, idChapitre);
+  const { matiere, chapitre } = trouverChapitre(idMatiere, idChapitre);
   if (!DOCUMENTS[doc] || !fichierDe(chapitre, doc)) doc = 'cours';
   const sections = await chargerSections(fichierDe(chapitre, doc));
   n = Math.min(Math.max(0, n), sections.length - 1);
@@ -115,15 +124,32 @@ async function afficherSection(doc, idMatiere, idChapitre, n) {
         `<a href="${lienPosition(id, idMatiere, idChapitre)}" aria-current="${id === doc}">${nom}</a>`).join('')}
     </nav>` : '';
 
+  const notations = matiere.notations ? `<a class="lien-notations" href="#/notations/${idMatiere}">Notations</a>` : '';
+
   titre.textContent = chapitre.titre;
   retour.hidden = false;
+  retour.href = '#/';
   vue.innerHTML = `${onglets}
-    <p class="position">Section ${n + 1} / ${sections.length}</p>
+    <p class="position">Section ${n + 1} / ${sections.length}${notations}</p>
     <article class="section">${sections[n].html}</article>`;
   bas.hidden = false;
   bas.innerHTML = `
     <a href="${lien(n - 1)}" aria-disabled="${n === 0}">‹ Précédent</a>
     <a href="${lien(n + 1)}" aria-disabled="${n === sections.length - 1}">Suivant ›</a>`;
+  window.scrollTo(0, 0);
+}
+
+async function afficherNotations(idMatiere) {
+  const matiere = trouverMatiere(idMatiere);
+  if (!matiere.notations) throw new Error('Pas de notations pour cette matière');
+  const sections = await chargerSections(matiere.notations);
+  lecture = null;
+  titre.textContent = `Notations · ${matiere.nom}`;
+  retour.hidden = false;
+  // Le retour ramène à la section qu'on lisait (ou à l'accueil).
+  retour.href = pagePrecedente.startsWith('#/notations') ? '#/' : pagePrecedente;
+  bas.hidden = true;
+  vue.innerHTML = `<article class="section">${sections.map(s => s.html).join('')}</article>`;
   window.scrollTo(0, 0);
 }
 
@@ -171,7 +197,9 @@ async function router() {
     await chargerIndex();
     const [page, ...args] = location.hash.replace(/^#\/?/, '').split('/').map(decodeURIComponent);
     if (DOCUMENTS[page]) await afficherSection(page, args[0], args[1], Number(args[2]) || 0);
+    else if (page === 'notations') await afficherNotations(args[0]);
     else afficherAccueil();
+    if (page !== 'notations') pagePrecedente = location.hash || '#/';
   } catch (erreur) {
     bas.hidden = true;
     vue.innerHTML = `<p class="erreur">Erreur : ${echapper(erreur.message)}</p>`;

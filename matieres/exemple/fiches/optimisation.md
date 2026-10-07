@@ -2,6 +2,19 @@
 
 > **À retenir :** exemple de fiche pour tester l'app. Les références aux TD et partiels ci-dessous sont **fictives**.
 
+## Notations
+
+| Symbole | Signification |
+|---|---|
+| $f$ | fonction à minimiser, de $\mathbb{R}^n$ dans $\mathbb{R}$ |
+| $\lambda \in [0,1]$ | coefficient de la combinaison convexe |
+| $\nabla f$, $\nabla^2 f$ | gradient, hessienne |
+| $A \succeq 0$ | $A$ semi-définie positive ; $I$ l'identité |
+| $x_k$, $x^\star$ | $k$-ième itéré, minimiseur |
+| $\eta$ | pas de la descente |
+| $L$, $\mu$ | constantes de lissité et de forte convexité |
+| $a$ | coefficient de la quadratique test $f(x) = a x^2$ |
+
 ## Fonctions convexes
 
 **Définition.** $f$ est convexe si $f(\lambda x + (1-\lambda) y) \le \lambda f(x) + (1-\lambda) f(y)$ pour tous $x, y$ et $\lambda \in [0,1]$ : la corde est au-dessus du graphe.

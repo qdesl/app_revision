@@ -33,6 +33,8 @@ Commencé le 2026-10-06. Rien n'est encore codé à part la conversion des PDF (
 | Conversion des documents | **En local, en Markdown, avant que Claude ne les lise** | Économie de tokens (§5) |
 | Graphiques (2026-10-07) | Claude écrit une source matplotlib (`.py`) ou TikZ (`.tex`) → SVG via `outils/figure.py` | Courbes et schémas nets sur téléphone, mode sombre, source modifiable |
 | Fiches de révision (2026-10-07) | Une fiche par chapitre, ouverte par défaut, construite à partir de **toutes** les sources (cours, TD, partiels, notes, captures) ; peut **ajouter** des notions absentes du cours, dans les **notations du cours** | Réviser ce qui tombe vraiment, pas seulement le cours |
+| Organisation (2026-10-07) | Claude **organise à partir du désorganisé** : `organisation.md` par matière (inventaire des sources, plan des chapitres, trous et doublons) | Les documents arrivent en vrac ; l'inventaire évite de relire les sources |
+| Notations (2026-10-07) | Priorité : cours > notes de l'utilisateur > TD/partiels > choix de Claude ; **tout symbole défini** dans `notations.md` (glossaire unique) et en tête de chaque fiche | Cohérence entre cours, TD, partiels et fiches |
 | Dépôt (2026-10-07) | GitHub **public** `qdesl/app_revision` ; `sources/` jamais publié | GitHub Pages gratuit ; documents des profs gardés en local |
 
 ## 4. Fonctionnement prévu

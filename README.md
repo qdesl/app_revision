@@ -11,6 +11,8 @@ app/                    ← la PWA (HTML/CSS/JS sans build)
 matieres/<matière>/
 ├── sources/            ← documents bruts — NON publiés (.gitignore)
 │   └── cours/ td/ partiels/ notes/ captures/   (facultatif, sinon en vrac)
+├── organisation.md     ← inventaire des sources + plan des chapitres (fait par Claude)
+├── notations.md        ← glossaire unique des notations de la matière
 ├── convertis/          ← Markdown produit par pandoc / Marker
 ├── etalonnage.md       ← fiche d'une page tirée des partiels et TD
 ├── fiches/             ← fiches de révision par chapitre (cours + TD + partiels + notes)

@@ -128,8 +128,11 @@ main {
 .formule-bloc .katex-display { margin: 0; padding: .3rem 0; }
 .section table { border-collapse: collapse; }
 .section th, .section td { border: 1px solid var(--ligne); padding: .3rem .6rem; }
+.section td:first-child { white-space: nowrap; } /* formules de la 1re colonne (symboles) jamais coupées */
 
-.position { color: var(--discret); font-size: .85rem; margin: 0 0 .5rem; }
+.position { display: flex; justify-content: space-between; align-items: baseline; color: var(--discret); font-size: .85rem; margin: 0 0 .5rem; }
+.lien-notations { font-size: .85rem; font-weight: 600; color: var(--accent); text-decoration: none; border: 1px solid var(--ligne); border-radius: 1rem; padding: .15rem .7rem; }
+.matiere h2 { display: flex; justify-content: space-between; align-items: center; }
 
 /* Gros boutons en bas de l'écran, à portée du pouce */
 .bas {

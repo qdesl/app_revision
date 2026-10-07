@@ -23,13 +23,41 @@ App **perso** pour réviser ses cours dans les transports, sur un téléphone **
 - **pandoc 3.8** (système) pour `.tex`, `.docx`, `.ipynb`, `.md`.
 - Pas de Node.js : app en HTML/CSS/JS sans build, KaTeX embarqué.
 
+## Principe général : organiser à partir du désorganisé
+
+Les documents arrivent **en vrac** : mal nommés, mélangés, incomplets, sans plan clair. C'est à Claude de **produire la structure**, pas à l'utilisateur de la fournir.
+
+Pour chaque matière, `matieres/<matière>/organisation.md` (créé au premier traitement, tenu à jour) :
+
+1. **Inventaire des sources** : un tableau, une ligne par fichier de `sources/` — type deviné (cours, TD, partiel, corrigé, notes, capture…), date ou année, chapitres couverts, fichier converti correspondant. Les sessions suivantes lisent cet inventaire au lieu de rouvrir les sources.
+2. **Plan des chapitres** : déduit de **toutes** les sources (le cours, mais aussi l'ordre des TD et ce qui tombe en partiel), même si le cours n'en a pas. Chaque chapitre a un identifiant court (`gradient`, `dualite`…) réutilisé partout : `convertis/`, `fiches/`, `questions/`, `index.json`.
+3. **Trous et doublons** : chapitre sans cours (seulement des TD), deux versions d'un même poly, pages manquantes… signalés à l'utilisateur, pas devinés en silence.
+
+Un document qui couvre plusieurs chapitres est découpé par chapitre dans `convertis/`.
+
+## Notations
+
+Une seule notation par objet, dans toute la matière. **Ordre de priorité** :
+
+1. les notations **du cours** ;
+2. celles de **l'utilisateur** (notes perso, captures annotées) pour ce que le cours ne couvre pas ;
+3. celles des **TD et partiels** ;
+4. un choix de Claude, en dernier recours seulement — et alors cohérent avec le reste.
+
+**Tout symbole utilisé est défini**, sans exception (fiches, questions, corrigés) :
+
+- `matieres/<matière>/notations.md` : **glossaire unique** de la matière. Tableau `Symbole | Signification | Origine | Autres notations rencontrées` (origine : cours, tes notes, TD 2, Claude…). Le lire **avant** d'écrire, y ajouter tout nouveau symbole **avant** de l'utiliser.
+- Chaque fiche commence par une section `## Notations` qui reprend les symboles du chapitre : la fiche se lit seule.
+- Une source qui note autrement : on traduit dans la notation retenue, et on l'indique une fois (colonne « Autres notations » et/ou « noté $m$ dans le TD 2 »).
+- Le glossaire est déclaré dans `matieres/index.json` (champ `"notations"` de la matière) : l'app l'affiche via le bouton « Notations ».
+
 ## Fiches de révision
 
 Une fiche par chapitre, `matieres/<matière>/fiches/<chapitre>.md`, affichée par défaut dans l'app (onglet « Fiche », le cours complet reste à côté). Ce n'est **pas qu'un résumé** du cours :
 
 - **Toutes les sources servent** : cours (le fond), `etalonnage.md` tiré des partiels et TD (ce qui tombe, le niveau, les pièges), notes perso et captures (ce que le prof a dit, ses insistances).
 - **Extrapoler est permis** : une notion vue en TD, en partiel ou dans les notes mais absente du cours est **ajoutée**, dans un encadré « Complément (source) ».
-- **Notations du cours = référence.** Une notion venue d'ailleurs est réécrite dans les notations du cours ; si la source note autrement, le dire une fois (« noté $m$ dans le TD 2 »). Jamais deux notations pour la même chose.
+- **Notations** : celles retenues dans `notations.md` (voir « Notations » ci-dessus) ; une notion venue d'ailleurs y est réécrite. Section `## Notations` en tête de chaque fiche.
 - **Toujours citer la source** d'un encadré : (TD 3, ex. 2), (partiel 2024, ex. 1), (notes du 12/10).
 - Encadrés reconnus par l'app (citation `>` qui commence par le mot-clé en gras) :
 

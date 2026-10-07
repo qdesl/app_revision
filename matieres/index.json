@@ -3,6 +3,7 @@
     {
       "id": "exemple",
       "nom": "Exemple",
+      "notations": "exemple/notations.md",
       "chapitres": [
         {
           "id": "optimisation",
