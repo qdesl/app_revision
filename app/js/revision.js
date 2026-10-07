@@ -79,3 +79,41 @@ export function enregistrer(q, matiere, chapitre, reussi, { reprise = false, mai
   ecrire('maitrise', maitrise);
   ecrire('historique', historique);
 }
+
+// --- Statistiques pour l'accueil -------------------------------------------------------
+
+const jourDe = date => new Date(date).toLocaleDateString('sv-SE'); // AAAA-MM-JJ, heure locale
+
+// Nombre de jours consécutifs avec au moins une réponse, jusqu'à aujourd'hui
+// (ou jusqu'à hier : la série n'est pas perdue tant que la journée n'est pas finie).
+export function serieDeJours(maintenant = Date.now()) {
+  const jours = new Set(historique.map(r => jourDe(r.date)));
+  const jour = new Date(maintenant);
+  if (!jours.has(jourDe(jour))) jour.setDate(jour.getDate() - 1);
+  let serie = 0;
+  while (jours.has(jourDe(jour))) {
+    serie++;
+    jour.setDate(jour.getDate() - 1);
+  }
+  return serie;
+}
+
+export function reponsesDuJour(maintenant = Date.now()) {
+  const aujourdhui = jourDe(maintenant);
+  return historique.filter(r => jourDe(r.date) === aujourdhui).length;
+}
+
+// Maîtrise d'un chapitre, de 0 à 3 : nombre de niveaux franchis dans toutes ses sections
+// (niveau 3 franchi = toutes les questions de niveau 3 réussies au moins une fois).
+export function maitriseChapitre(questions, matiere, chapitre) {
+  if (!questions.length || !questions.some(q => etats[q.id])) return 0;
+  const sections = [...new Set(questions.map(q => q.section ?? ''))];
+  const franchis = sections.map(section => {
+    const qs = questions.filter(q => (q.section ?? '') === section);
+    const niveau = niveauDebloque(matiere, chapitre, qs[0]);
+    const niveau3 = qs.filter(q => q.niveau === 3);
+    const tout3 = niveau === 3 && niveau3.length > 0 && niveau3.every(q => etats[q.id]?.reussites > 0);
+    return tout3 ? 3 : niveau - 1;
+  });
+  return Math.min(...franchis);
+}

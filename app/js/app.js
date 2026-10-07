@@ -1,7 +1,8 @@
 // Point d'entrée de l'app : chargement de l'index des cours et navigation.
 //
 // Adresses (dans le #) :
-//   #/                                       accueil, liste des matières et chapitres
+//   #/                                       accueil : aujourd'hui, reprise, tuiles des matières
+//   #/matiere/<matière>                      page d'une matière : ses chapitres
 //   #/<doc>/<matière>/<chapitre>/<n>         section n de la fiche de révision (doc = fiche) ou du cours (doc = cours)
 //   #/notations/<matière>                    glossaire des notations de la matière, sur une seule page
 //   #/reviser/<matière>/<chapitre>           séance de révision du chapitre (questions)
@@ -9,7 +10,7 @@
 import { decouper } from './markdown.js';
 import { lire, ecrire } from './stockage.js';
 import { activerBalayage } from './geste.js';
-import { aReviser, enAvance, prochaineRevision } from './revision.js';
+import { aReviser, enAvance, prochaineRevision, serieDeJours, reponsesDuJour, maitriseChapitre } from './revision.js';
 import { lancerSeance } from './ecran-revision.js';
 import { icone } from './icones.js';
 import './reglages.js';
@@ -30,6 +31,7 @@ const cacheSections = {};    // chemin du .md → sections déjà découpées
 const cacheQuestions = {};   // chemin du .json → liste des questions
 let lecture = null;          // { lien(i), n, total } quand une section est affichée
 let pagePrecedente = '#/';   // pour revenir d'un glossaire à la section qu'on lisait
+let numeroNavigation = 0;    // incrémenté à chaque changement de page (un affichage lent ne doit pas écraser le suivant)
 let sensArrivee = 0;         // 1 : la nouvelle section arrive de droite, -1 : de gauche, 0 : sans animation
 
 // Couleur de chaque matière : « teinte » de matiere.json, sinon une teinte choisie d'après son id.
@@ -128,10 +130,65 @@ function modeAccueil(actif) {
   progression.hidden = actif;
 }
 
-function afficherAccueil() {
+const NOMS_MAITRISE = ['À découvrir', 'Restitution', 'Application', 'Niveau partiel'];
+
+const pluriel = (n, mot) => `${n} ${mot}${n > 1 ? 's' : ''}`;
+const progressionChapitre = (m, c) => avancement(docParDefaut(c), m.id, c.id)?.pourcent ?? 0;
+const progressionMatiere = m => (m.chapitres.length
+  ? Math.round(m.chapitres.reduce((t, c) => t + progressionChapitre(m, c), 0) / m.chapitres.length) : 0);
+
+// Anneau de progression (SVG) avec le pourcentage au centre.
+function anneau(pourcent) {
+  const r = 16, longueur = 2 * Math.PI * r;
+  return `<span class="anneau"><svg viewBox="0 0 40 40" aria-hidden="true">
+      <circle cx="20" cy="20" r="${r}" class="anneau-fond"/>
+      <circle cx="20" cy="20" r="${r}" class="anneau-plein" stroke-dasharray="${longueur}"
+        stroke-dashoffset="${longueur * (1 - pourcent / 100)}"/>
+    </svg><span>${pourcent}%</span></span>`;
+}
+
+// Questions à revoir d'une matière : { total, parChapitre: { id: n } }.
+async function questionsDues(m) {
+  const parChapitre = {};
+  for (const c of m.chapitres) {
+    try {
+      parChapitre[c.id] = aReviser(await chargerQuestions(c), m.id, c.id).length;
+    } catch {
+      parChapitre[c.id] = 0; // fichier de questions manquant
+    }
+  }
+  return { total: Object.values(parChapitre).reduce((a, b) => a + b, 0), parChapitre };
+}
+
+function salutation() {
+  const heure = new Date().getHours();
+  return heure < 5 ? 'Bonne nuit' : heure < 18 ? 'Bonjour' : 'Bonsoir';
+}
+
+function carteReprise() {
+  const derniere = lire('derniere-lecture', null);
+  if (!derniere?.doc) return '';
+  try {
+    const { matiere, chapitre } = trouverChapitre(derniere.matiere, derniere.chapitre);
+    if (!fichierDe(chapitre, derniere.doc)) return '';
+    const a = avancement(derniere.doc, derniere.matiere, derniere.chapitre);
+    return `<a class="reprise teinte" href="${lienPosition(derniere.doc, derniere.matiere, derniere.chapitre)}" style="--teinte:${teinteDe(matiere)}">
+      <small>Reprendre · ${echapper(matiere.nom)}</small>
+      <strong>${echapper(chapitre.titre)}</strong>
+      ${a ? `${DOCUMENTS[derniere.doc]} · section ${a.n + 1} sur ${a.total}
+        <div class="barre-reprise"><span style="width:${a.pourcent}%"></span></div>` : ''}
+    </a>`;
+  } catch {
+    return ''; // chapitre ou document supprimé depuis
+  }
+}
+
+async function afficherAccueil(numero) {
+  const dues = await Promise.all(index.matieres.map(questionsDues));
+  if (numero !== numeroNavigation) return; // on a changé de page pendant le chargement
   modeAccueil(true);
   appliquerTeinte(null);
-  titre.textContent = 'Révisions';
+  titre.textContent = salutation();
   retour.hidden = true;
   retour.href = '#/';
   bas.hidden = true;
@@ -141,56 +198,83 @@ function afficherAccueil() {
     return;
   }
 
-  let reprise = '';
-  const derniere = lire('derniere-lecture', null);
-  if (derniere?.doc) {
-    try {
-      const { chapitre } = trouverChapitre(derniere.matiere, derniere.chapitre);
-      if (!fichierDe(chapitre, derniere.doc)) throw new Error('document supprimé');
-      const a = avancement(derniere.doc, derniere.matiere, derniere.chapitre);
-      reprise = `<a class="reprise" href="${lienPosition(derniere.doc, derniere.matiere, derniere.chapitre)}">
-        <small>Reprendre · ${DOCUMENTS[derniere.doc]}</small>
-        <strong>${echapper(chapitre.titre)}</strong>
-        ${a ? `section ${a.n + 1} sur ${a.total}<div class="barre-reprise"><span style="width:${a.pourcent}%"></span></div>` : ''}
-      </a>`;
-    } catch {
-      // chapitre ou document supprimé depuis : pas de reprise
-    }
-  }
-
-  vue.innerHTML = reprise + index.matieres.map(m => `
-    <section class="matiere">
-      <h2>${echapper(m.nom)}${m.notations ? ` <a class="lien-notations" href="#/notations/${m.id}">Notations</a>` : ''}</h2>
-      <ul class="liste">
-        ${m.chapitres.map(c => {
-          const doc = docParDefaut(c);
-          const a = avancement(doc, m.id, c.id);
-          return `<li class="carte">
-            <a class="ouvrir" href="${lienPosition(doc, m.id, c.id)}">
-              <span class="nom">${echapper(c.titre)}${c.fiche ? '<small class="etiquette">fiche</small>' : ''}</span>
-              <span class="detail">${a ? `${DOCUMENTS[doc]} · section ${a.n + 1} sur ${a.total}` : 'Pas encore commencé'}</span>
-              ${a ? jauge(a.pourcent) : ''}
-            </a>
-            ${c.questions ? `<a class="reviser" href="#/reviser/${m.id}/${c.id}" data-compte="${m.id}/${c.id}">Réviser</a>` : ''}
-          </li>`;
-        }).join('')}
-      </ul>
-    </section>`).join('');
-  compterQuestionsDues();
+  const totalDues = dues.reduce((t, d) => t + d.total, 0);
+  const serie = serieDeJours();
+  const duJour = reponsesDuJour();
+  vue.innerHTML = `
+    <p class="date-du-jour">${new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+    <section class="aujourdhui">
+      <small>Aujourd'hui</small>
+      <div class="aujourdhui-principal">
+        <span class="grand-nombre">${totalDues}</span>
+        <span>${totalDues ? (totalDues > 1 ? 'questions à revoir' : 'question à revoir') : 'question à revoir : tout est à jour'}</span>
+      </div>
+      <div class="aujourdhui-stats">
+        <span>${icone('flame')} ${serie ? `${pluriel(serie, 'jour')} de suite` : 'Commence ta série'}</span>
+        <span>${icone('circle-check')} ${duJour ? `${pluriel(duJour, 'réponse')} aujourd'hui` : 'Pas encore de réponse'}</span>
+      </div>
+    </section>
+    ${carteReprise()}
+    <h2 class="titre-rubrique">Matières</h2>
+    <div class="tuiles">
+      ${index.matieres.map((m, i) => `
+        <a class="tuile teinte" href="#/matiere/${m.id}" style="--teinte:${teinteDe(m)}">
+          <span class="tuile-haut">${icone('book-open')}${dues[i].total ? `<span class="pastille">${dues[i].total}</span>` : ''}</span>
+          <strong>${echapper(m.nom)}</strong>
+          <span class="tuile-bas">
+            <span class="detail">${pluriel(m.chapitres.length, 'chapitre')}</span>
+            ${anneau(progressionMatiere(m))}
+          </span>
+        </a>`).join('')}
+    </div>`;
 }
 
-// Nombre de questions à revoir sur chaque bouton « Réviser » (fichiers chargés après l'affichage).
-async function compterQuestionsDues() {
-  for (const bouton of vue.querySelectorAll('[data-compte]')) {
-    try {
-      const [idMatiere, idChapitre] = bouton.dataset.compte.split('/');
-      const { chapitre } = trouverChapitre(idMatiere, idChapitre);
-      const n = aReviser(await chargerQuestions(chapitre), idMatiere, idChapitre).length;
-      bouton.innerHTML = n ? `Réviser <span class="pastille">${n}</span>` : 'Réviser ✓';
-    } catch {
-      // fichier de questions manquant : le bouton reste tel quel
-    }
+async function afficherMatiere(idMatiere, numero) {
+  const m = trouverMatiere(idMatiere);
+  const { total, parChapitre } = await questionsDues(m);
+  const maitrises = {};
+  for (const c of m.chapitres) {
+    maitrises[c.id] = c.questions ? maitriseChapitre(await chargerQuestions(c).catch(() => []), m.id, c.id) : null;
   }
+  if (numero !== numeroNavigation) return;
+  modeAccueil(false);
+  progression.hidden = true;
+  appliquerTeinte(m);
+  titre.textContent = ''; // le nom est déjà en grand dans l'en-tête de la page
+  retour.hidden = false;
+  retour.href = '#/';
+  bas.hidden = true;
+  bas.onclick = null;
+  lecture = null;
+
+  vue.innerHTML = `
+    <header class="entete-matiere">
+      <h2>${echapper(m.nom)}</h2>
+      <p>${pluriel(m.chapitres.length, 'chapitre')} · ${total ? `${total} à revoir` : 'rien à revoir'}</p>
+      ${m.notations ? `<a class="bouton-clair" href="#/notations/${m.id}">${icone('sigma')} Notations</a>` : ''}
+    </header>
+    <ul class="liste">
+      ${m.chapitres.map((c, i) => {
+        const doc = docParDefaut(c);
+        const a = avancement(doc, m.id, c.id);
+        const niveau = maitrises[c.id];
+        return `<li class="carte">
+          <a class="ouvrir" href="${lienPosition(doc, m.id, c.id)}">
+            <span class="nom"><span class="numero">${i + 1}</span><span class="titre-chapitre">${echapper(c.titre)}</span>${icone('chevron-right')}</span>
+            <span class="detail">${a ? `${DOCUMENTS[doc]} · section ${a.n + 1} sur ${a.total}` : 'Pas encore commencé'}</span>
+            ${jauge(a?.pourcent ?? 0)}
+          </a>
+          ${c.questions ? `<div class="pied-carte">
+            <span class="maitrise" aria-label="Maîtrise : ${NOMS_MAITRISE[niveau]}">
+              ${[1, 2, 3].map(k => `<i class="${k <= niveau ? 'plein' : ''}"></i>`).join('')}
+              <small>${NOMS_MAITRISE[niveau]}</small>
+            </span>
+            <a class="reviser" href="#/reviser/${m.id}/${c.id}">${icone('target')} Réviser
+              ${parChapitre[c.id] ? `<span class="pastille">${parChapitre[c.id]}</span>` : ''}</a>
+          </div>` : ''}
+        </li>`;
+      }).join('')}
+    </ul>`;
 }
 
 async function afficherSection(doc, idMatiere, idChapitre, n) {
@@ -217,7 +301,7 @@ async function afficherSection(doc, idMatiere, idChapitre, n) {
 
   titre.textContent = chapitre.titre;
   retour.hidden = false;
-  retour.href = '#/';
+  retour.href = `#/matiere/${idMatiere}`;
   vue.innerHTML = `
     ${onglets || notations ? `<div class="entete-lecture">${onglets}${notations}</div>` : ''}
     <article class="section${sensArrivee ? ` arrivee-${sensArrivee > 0 ? 'droite' : 'gauche'}` : ''}">${sections[n].html}</article>`;
@@ -309,10 +393,12 @@ async function router() {
   try {
     await chargerIndex();
     const [page, ...args] = location.hash.replace(/^#\/?/, '').split('/').map(decodeURIComponent);
+    const numero = ++numeroNavigation;
     if (DOCUMENTS[page]) await afficherSection(page, args[0], args[1], Number(args[2]) || 0);
+    else if (page === 'matiere') await afficherMatiere(args[0], numero);
     else if (page === 'notations') await afficherNotations(args[0]);
     else if (page === 'reviser') await afficherRevision(args[0], args[1]);
-    else afficherAccueil();
+    else await afficherAccueil(numero);
     if (page !== 'notations' && page !== 'reviser') pagePrecedente = location.hash || '#/';
   } catch (erreur) {
     bas.hidden = true;
