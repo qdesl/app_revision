@@ -13,6 +13,7 @@ import { activerBalayage } from './geste.js';
 import { aReviser, enAvance, prochaineRevision, serieDeJours, reponsesDuJour, maitriseChapitre } from './revision.js';
 import { lancerSeance } from './ecran-revision.js';
 import { icone } from './icones.js';
+import { creerFeuille } from './feuille.js';
 import './reglages.js';
 import './horsligne.js';
 
@@ -25,6 +26,8 @@ const titre = document.getElementById('titre');
 const retour = document.getElementById('retour');
 const bas = document.getElementById('bas');
 const progression = document.getElementById('progression');
+const sommaire = document.getElementById('sommaire');
+const feuilleSommaire = creerFeuille(sommaire);
 
 let index = null;            // contenu de matieres/index.json
 const cacheSections = {};    // chemin du .md → sections déjà découpées
@@ -310,10 +313,30 @@ async function afficherSection(doc, idMatiere, idChapitre, n) {
   bas.onclick = null;
   bas.innerHTML = `
     <a class="precedent" href="${lien(n - 1)}" aria-disabled="${n === 0}" aria-label="Section précédente">${icone('chevron-left')}</a>
-    <span class="compteur">${n + 1} / ${sections.length}</span>
+    <button class="compteur" data-action="sommaire" aria-label="Sommaire du chapitre">${icone('list')} ${n + 1} / ${sections.length}</button>
     <a class="suivant" href="${lien(n + 1)}" aria-disabled="${n === sections.length - 1}" aria-label="Section suivante">Suivant ${icone('chevron-right')}</a>`;
   window.scrollTo(0, 0);
+
+  // Sommaire : toutes les sections, l'actuelle en évidence, celles déjà passées cochées.
+  sommaire.innerHTML = `
+    <div class="poignee" aria-hidden="true"></div>
+    <h2 class="titre-sommaire">${echapper(chapitre.titre)}<small>${DOCUMENTS[doc]}</small></h2>
+    <ol class="liste-sommaire">
+      ${sections.map((section, i) => `
+        <li class="niveau-${Math.max(1, section.niveau)}${i === n ? ' actuelle' : ''}${i < n ? ' lue' : ''}">
+          <a href="${lien(i)}" data-section="${i}">
+            <span class="puce">${i < n ? icone('check') : i + 1}</span>${echapper(section.titre)}
+          </a>
+        </li>`).join('')}
+    </ol>`;
 }
+
+sommaire.addEventListener('click', e => {
+  const lien = e.target.closest('[data-section]');
+  if (!lien) return;
+  e.preventDefault();
+  location.replace(lien.getAttribute('href'));
+});
 
 async function afficherNotations(idMatiere) {
   const matiere = trouverMatiere(idMatiere);
@@ -374,9 +397,14 @@ function allerA(sens) {
 // Précédent / suivant remplacent l'entrée de l'historique : le bouton « retour »
 // d'Android ramène à l'accueil au lieu de remonter section par section.
 bas.addEventListener('click', e => {
-  const lien = e.target.closest('a');
+  const lien = e.target.closest('a, [data-action="sommaire"]');
   if (!lien) return;
   e.preventDefault();
+  if (lien.dataset.action === 'sommaire') {
+    feuilleSommaire.ouvrir(true);
+    sommaire.querySelector('.actuelle')?.scrollIntoView({ block: 'center' });
+    return;
+  }
   if (lien.classList.contains('suivant')) allerA(1);
   if (lien.classList.contains('precedent')) allerA(-1);
 });
