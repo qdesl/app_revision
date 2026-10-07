@@ -7,7 +7,7 @@ App **perso** pour réviser ses cours dans les transports, sur un téléphone **
 
 - **PWA hors ligne** (doit marcher dans le train, sans réseau). L'option « app sur claude.ai » a été écartée pour ça.
 - Les documents seront **de tout type et souvent pas structurés** : ne pas dépendre de la structure LaTeX des fiches existantes (définitions, boîtes…), ce n'est qu'un bonus.
-- **Partiels et TD** servent à étalonner les questions : 3 niveaux (restitution → application → niveau partiel), avec un corrigé pas à pas.
+- **Partiels, TD, notes et captures** servent à étalonner les questions et à enrichir les fiches (voir « Fiches de révision ») : 3 niveaux (restitution → application → niveau partiel), avec un corrigé pas à pas.
 - **Économie de tokens** : toujours **convertir en Markdown en local** avant de lire un document ; ne rouvrir le PDF d'origine que pour vérifier une page douteuse ; travailler **chapitre par chapitre**.
 - L'app affiche directement le Markdown converti ; Claude n'intervient que pour les questions, les corrections de conversion et le manuscrit illisible par les outils.
 
@@ -22,6 +22,26 @@ App **perso** pour réviser ses cours dans les transports, sur un téléphone **
 - **Marker** (PDF, scans → Markdown + LaTeX) est installé dans `.venv/` de ce dossier, **séparé** du Python anaconda de base (qui contient un PyTorch à ne pas toucher). Commande : voir `NOTES.md` §7.
 - **pandoc 3.8** (système) pour `.tex`, `.docx`, `.ipynb`, `.md`.
 - Pas de Node.js : app en HTML/CSS/JS sans build, KaTeX embarqué.
+
+## Fiches de révision
+
+Une fiche par chapitre, `matieres/<matière>/fiches/<chapitre>.md`, affichée par défaut dans l'app (onglet « Fiche », le cours complet reste à côté). Ce n'est **pas qu'un résumé** du cours :
+
+- **Toutes les sources servent** : cours (le fond), `etalonnage.md` tiré des partiels et TD (ce qui tombe, le niveau, les pièges), notes perso et captures (ce que le prof a dit, ses insistances).
+- **Extrapoler est permis** : une notion vue en TD, en partiel ou dans les notes mais absente du cours est **ajoutée**, dans un encadré « Complément (source) ».
+- **Notations du cours = référence.** Une notion venue d'ailleurs est réécrite dans les notations du cours ; si la source note autrement, le dire une fois (« noté $m$ dans le TD 2 »). Jamais deux notations pour la même chose.
+- **Toujours citer la source** d'un encadré : (TD 3, ex. 2), (partiel 2024, ex. 1), (notes du 12/10).
+- Encadrés reconnus par l'app (citation `>` qui commence par le mot-clé en gras) :
+
+  | Début de l'encadré | Couleur | Pour |
+  |---|---|---|
+  | `> **À retenir :**`, `**Définition**`, `**Théorème**`, `**Formule**` | bleu | l'essentiel |
+  | `> **Méthode (TD 3) :**`, `**Astuce**`, `**Réflexe**` | vert | comment faire |
+  | `> **Piège :**`, `**Attention**`, `**Erreur**` | rouge | erreurs classiques |
+  | `> **Tombé en partiel (2024, ex. 2) :**`, `**Annale**` | orange | ce qui tombe |
+  | `> **Complément (TD 2, ex. 4) :**`, `**Hors cours**` | violet | notion absente du cours |
+
+- Ajouter la fiche dans `matieres/index.json` (champ `"fiche"` du chapitre) et cocher la colonne « Fiche » de `suivi.md`.
 
 ## Graphiques
 

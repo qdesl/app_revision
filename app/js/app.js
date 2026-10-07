@@ -1,14 +1,15 @@
 // Point d'entrée de l'app : chargement de l'index des cours et navigation.
 //
 // Adresses (dans le #) :
-//   #/                                 accueil, liste des matières et chapitres
-//   #/lire/<matière>/<chapitre>/<n>    section n d'un chapitre
+//   #/                                       accueil, liste des matières et chapitres
+//   #/<doc>/<matière>/<chapitre>/<n>         section n de la fiche de révision (doc = fiche) ou du cours (doc = cours)
 
 import { decouper } from './markdown.js';
 import { lire, ecrire } from './stockage.js';
 import './reglages.js';
 
 const RACINE_COURS = '../matieres/';
+const DOCUMENTS = { fiche: 'Fiche', cours: 'Cours complet' };
 
 const vue = document.getElementById('vue');
 const titre = document.getElementById('titre');
@@ -47,14 +48,21 @@ function trouverChapitre(idMatiere, idChapitre) {
   return { matiere, chapitre };
 }
 
-// Position de lecture : dernière section lue de chaque chapitre, et dernier chapitre ouvert.
-const positions = lire('positions', {});
-const cle = (idMatiere, idChapitre) => `${idMatiere}/${idChapitre}`;
+// Fichier d'un document du chapitre (la fiche est facultative).
+const fichierDe = (chapitre, doc) => (doc === 'fiche' ? chapitre.fiche : chapitre.fichier);
+// Document ouvert par défaut : la fiche si elle existe, sinon le cours.
+const docParDefaut = chapitre => (chapitre.fiche ? 'fiche' : 'cours');
 
-function memoriserPosition(idMatiere, idChapitre, n) {
-  positions[cle(idMatiere, idChapitre)] = n;
+// Position de lecture : dernière section lue de chaque document, et dernier document ouvert.
+const positions = lire('positions', {});
+const cle = (doc, idMatiere, idChapitre) => `${doc}/${idMatiere}/${idChapitre}`;
+const lienPosition = (doc, idMatiere, idChapitre) =>
+  `#/${doc}/${idMatiere}/${idChapitre}/${positions[cle(doc, idMatiere, idChapitre)] ?? 0}`;
+
+function memoriserPosition(doc, idMatiere, idChapitre, n) {
+  positions[cle(doc, idMatiere, idChapitre)] = n;
   ecrire('positions', positions);
-  ecrire('derniere-lecture', { matiere: idMatiere, chapitre: idChapitre });
+  ecrire('derniere-lecture', { doc, matiere: idMatiere, chapitre: idChapitre });
 }
 
 function afficherAccueil() {
@@ -69,14 +77,15 @@ function afficherAccueil() {
 
   let reprise = '';
   const derniere = lire('derniere-lecture', null);
-  if (derniere) {
+  if (derniere?.doc) {
     try {
       const { chapitre } = trouverChapitre(derniere.matiere, derniere.chapitre);
-      const n = positions[cle(derniere.matiere, derniere.chapitre)] ?? 0;
-      reprise = `<a class="reprise" href="#/lire/${derniere.matiere}/${derniere.chapitre}/${n}">
-        <small>Reprendre</small>${echapper(chapitre.titre)} · section ${n + 1}</a>`;
+      if (!fichierDe(chapitre, derniere.doc)) throw new Error('document supprimé');
+      const n = positions[cle(derniere.doc, derniere.matiere, derniere.chapitre)] ?? 0;
+      reprise = `<a class="reprise" href="${lienPosition(derniere.doc, derniere.matiere, derniere.chapitre)}">
+        <small>Reprendre · ${DOCUMENTS[derniere.doc]}</small>${echapper(chapitre.titre)} · section ${n + 1}</a>`;
     } catch {
-      // chapitre supprimé depuis : pas de reprise
+      // chapitre ou document supprimé depuis : pas de reprise
     }
   }
 
@@ -84,25 +93,31 @@ function afficherAccueil() {
     <section class="matiere">
       <h2>${echapper(m.nom)}</h2>
       <ul class="liste">
-        ${m.chapitres.map(c => {
-          const n = positions[cle(m.id, c.id)] ?? 0;
-          return `<li><a href="#/lire/${m.id}/${c.id}/${n}">${echapper(c.titre)}</a></li>`;
-        }).join('')}
+        ${m.chapitres.map(c => `<li><a href="${lienPosition(docParDefaut(c), m.id, c.id)}">${echapper(c.titre)}
+          ${c.fiche ? '<small class="etiquette">fiche</small>' : ''}</a></li>`).join('')}
       </ul>
     </section>`).join('');
 }
 
-async function afficherSection(idMatiere, idChapitre, n) {
+async function afficherSection(doc, idMatiere, idChapitre, n) {
   const { chapitre } = trouverChapitre(idMatiere, idChapitre);
-  const sections = await chargerSections(chapitre.fichier);
+  if (!DOCUMENTS[doc] || !fichierDe(chapitre, doc)) doc = 'cours';
+  const sections = await chargerSections(fichierDe(chapitre, doc));
   n = Math.min(Math.max(0, n), sections.length - 1);
-  const lien = i => `#/lire/${idMatiere}/${idChapitre}/${i}`;
+  const lien = i => `#/${doc}/${idMatiere}/${idChapitre}/${i}`;
   lecture = { lien, n, total: sections.length };
-  memoriserPosition(idMatiere, idChapitre, n);
+  memoriserPosition(doc, idMatiere, idChapitre, n);
+
+  // Onglets Fiche / Cours complet, seulement si le chapitre a une fiche.
+  const onglets = chapitre.fiche ? `
+    <nav class="onglets">
+      ${Object.entries(DOCUMENTS).map(([id, nom]) =>
+        `<a href="${lienPosition(id, idMatiere, idChapitre)}" aria-current="${id === doc}">${nom}</a>`).join('')}
+    </nav>` : '';
 
   titre.textContent = chapitre.titre;
   retour.hidden = false;
-  vue.innerHTML = `
+  vue.innerHTML = `${onglets}
     <p class="position">Section ${n + 1} / ${sections.length}</p>
     <article class="section">${sections[n].html}</article>`;
   bas.hidden = false;
@@ -155,7 +170,7 @@ async function router() {
   try {
     await chargerIndex();
     const [page, ...args] = location.hash.replace(/^#\/?/, '').split('/').map(decodeURIComponent);
-    if (page === 'lire') await afficherSection(args[0], args[1], Number(args[2]) || 0);
+    if (DOCUMENTS[page]) await afficherSection(page, args[0], args[1], Number(args[2]) || 0);
     else afficherAccueil();
   } catch (erreur) {
     bas.hidden = true;

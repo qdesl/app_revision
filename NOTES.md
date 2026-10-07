@@ -31,6 +31,9 @@ Commencé le 2026-10-06. Rien n'est encore codé à part la conversion des PDF (
 | Ajout de documents | Depuis le PC (pas depuis le téléphone, pas de serveur) | Conséquence du choix PWA |
 | Retour des résultats vers Claude | Bouton « Exporter » dans l'app (V1) | Une synchro automatique pourra venir plus tard |
 | Conversion des documents | **En local, en Markdown, avant que Claude ne les lise** | Économie de tokens (§5) |
+| Graphiques (2026-10-07) | Claude écrit une source matplotlib (`.py`) ou TikZ (`.tex`) → SVG via `outils/figure.py` | Courbes et schémas nets sur téléphone, mode sombre, source modifiable |
+| Fiches de révision (2026-10-07) | Une fiche par chapitre, ouverte par défaut, construite à partir de **toutes** les sources (cours, TD, partiels, notes, captures) ; peut **ajouter** des notions absentes du cours, dans les **notations du cours** | Réviser ce qui tombe vraiment, pas seulement le cours |
+| Dépôt (2026-10-07) | GitHub **public** `qdesl/app_revision` ; `sources/` jamais publié | GitHub Pages gratuit ; documents des profs gardés en local |
 
 ## 4. Fonctionnement prévu
 

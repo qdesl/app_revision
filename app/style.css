@@ -7,6 +7,7 @@
   --carte: #ffffff;
   --taille-texte: 18px;
   --hauteur-bas: 4.5rem;
+  --piege: #c62828; --partiel: #d97706; --methode: #2e7d32; --retenir: #2f5fd0; --complement: #7b3fbf;
 }
 
 /* Thème sombre : automatique (réglage du téléphone) ou forcé dans les réglages */
@@ -14,11 +15,13 @@
   :root:not([data-theme="clair"]) {
     --fond: #16171a; --texte: #e6e6e9; --discret: #9a9aa2;
     --ligne: #2e3036; --accent: #7aa2ff; --carte: #1f2125;
+    --piege: #ef6b6b; --partiel: #f0a742; --methode: #5fbf6a; --retenir: #7aa2ff; --complement: #b98cf0;
   }
 }
 :root[data-theme="sombre"] {
   --fond: #16171a; --texte: #e6e6e9; --discret: #9a9aa2;
   --ligne: #2e3036; --accent: #7aa2ff; --carte: #1f2125;
+  --piege: #ef6b6b; --partiel: #f0a742; --methode: #5fbf6a; --retenir: #7aa2ff; --complement: #b98cf0;
 }
 :root[data-theme="sombre"] { color-scheme: dark; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="clair"]) { color-scheme: dark; } }
@@ -101,7 +104,24 @@ main {
 .section figcaption { color: var(--discret); font-size: .85em; line-height: 1.4; margin-top: .3rem; }
 .section pre { overflow-x: auto; padding: .8rem; background: var(--carte); border: 1px solid var(--ligne); border-radius: .4rem; font-size: .85em; }
 .section code { font-size: .9em; }
-.section blockquote { margin: 1rem 0; padding: .2rem 1rem; border-left: 4px solid var(--accent); background: var(--carte); }
+.section blockquote { margin: 1rem 0; padding: .2rem 1rem; border-left: 4px solid var(--discret); background: var(--carte); border-radius: 0 .4rem .4rem 0; }
+.section blockquote.encadre-piege { border-color: var(--piege); }
+.section blockquote.encadre-piege > p:first-child > strong:first-child { color: var(--piege); }
+.section blockquote.encadre-partiel { border-color: var(--partiel); }
+.section blockquote.encadre-partiel > p:first-child > strong:first-child { color: var(--partiel); }
+.section blockquote.encadre-methode { border-color: var(--methode); }
+.section blockquote.encadre-methode > p:first-child > strong:first-child { color: var(--methode); }
+.section blockquote.encadre-retenir { border-color: var(--retenir); }
+.section blockquote.encadre-retenir > p:first-child > strong:first-child { color: var(--retenir); }
+
+.section blockquote.encadre-complement { border-color: var(--complement); }
+.section blockquote.encadre-complement > p:first-child > strong:first-child { color: var(--complement); }
+
+/* Onglets Fiche / Cours complet */
+.onglets { display: flex; gap: .3rem; padding: .25rem; margin-bottom: .8rem; background: var(--carte); border: 1px solid var(--ligne); border-radius: .7rem; }
+.onglets a { flex: 1; text-align: center; padding: .55rem; border-radius: .5rem; color: var(--discret); text-decoration: none; font-size: 16px; font-weight: 600; }
+.onglets a[aria-current="true"] { background: var(--accent); color: var(--fond); }
+.etiquette { float: right; color: var(--discret); font-size: .75em; margin-top: .15em; }
 
 /* Équations et tableaux trop larges : défilement horizontal au lieu de rétrécir */
 .formule-bloc, .defile { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; margin: 1rem 0; }

@@ -68,6 +68,24 @@ function grouperEnSections(tokens) {
   return sections.filter(s => s.tokens.some(t => t.type !== 'space'));
 }
 
+// Encadrés : une citation (> ...) qui commence par un mot-clé en gras prend une couleur.
+//   > **Piège :** …   > **Tombé en partiel (2024, ex. 2) :** …   > **Méthode (TD 3) :** …
+//   > **Complément (TD 2, ex. 4) :** notion absente du cours, ajoutée depuis un TD, un partiel ou des notes
+const ENCADRES = [
+  [/^(piège|attention|erreur)/i, 'piege'],
+  [/^(tombé|partiel|annale|examen)/i, 'partiel'],
+  [/^(méthode|astuce|réflexe)/i, 'methode'],
+  [/^(à retenir|définition|théorème|propriété|formule)/i, 'retenir'],
+  [/^(complément|hors cours|pour aller plus loin)/i, 'complement'],
+];
+
+function colorerEncadres(html) {
+  return html.replace(/<blockquote>(\s*<p><strong>)([^<]*)/g, (tout, debut, motCle) => {
+    const trouve = ENCADRES.find(([motif]) => motif.test(motCle.trim()));
+    return trouve ? `<blockquote class="encadre-${trouve[1]}">${debut}${motCle}` : tout;
+  });
+}
+
 // Les liens et images relatifs pointent vers le dossier du fichier .md, pas vers l'app.
 function corrigerChemins(tokens, base) {
   marked.walkTokens(tokens, token => {
@@ -89,7 +107,7 @@ export function decouper(texte, base = '') {
       .replace(/<p>(<img [^>]*alt="([^"]+)"[^>]*>)<\/p>/g, '<figure>$1<figcaption>$2</figcaption></figure>')
       // Dans l'attribut alt, une formule reste en texte (du HTML KaTeX le casserait).
       .replace(/alt="([^"]*)"/g, (_, alt) => `alt="${alt.replace(/@@MATH(\d+)@@/g, (_, n) => formules[n].tex.replace(/"/g, '&quot;'))}"`);
-    const html = remettreFormules(brut, formules)
+    const html = remettreFormules(colorerEncadres(brut), formules)
       // Les tableaux larges défilent eux aussi sur le côté.
       .replace(/<table>/g, '<div class="defile"><table>').replace(/<\/table>/g, '</table></div>');
     return { titre, niveau, html };
