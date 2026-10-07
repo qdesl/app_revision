@@ -15,6 +15,14 @@
       if (r.theme && r.theme !== 'auto') document.documentElement.dataset.theme = r.theme;
       if (r.taille) document.documentElement.style.setProperty('--taille-texte', r.taille + 'px');
     } catch {}
+    // Nouvelle version de l'app : écouté dès le début de la page, car le navigateur peut
+    // installer la nouvelle version avant que les modules JS ne soient chargés.
+    if (navigator.serviceWorker?.controller) {
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        window.nouvelleVersion = true;
+        window.dispatchEvent(new Event('nouvelle-version'));
+      });
+    }
   </script>
   <link rel="stylesheet" href="vendor/katex/katex.min.css">
   <link rel="stylesheet" href="style.css">

@@ -17,10 +17,11 @@ function dernierEtat() {
   return `Hors ligne : ${derniere.fichiers} fichiers enregistrés (${quand}).`;
 }
 
-function proposerActualisation() {
+function proposerActualisation(texte = 'Cours mis à jour · Actualiser') {
+  if (document.querySelector('.bandeau')) return;
   const bandeau = document.createElement('button');
   bandeau.className = 'bandeau';
-  bandeau.textContent = 'Cours mis à jour · Actualiser';
+  bandeau.textContent = texte;
   bandeau.addEventListener('click', () => location.reload());
   document.body.append(bandeau);
 }
@@ -66,8 +67,18 @@ window.addEventListener('appinstalled', () => { boutonInstaller.hidden = true; }
 
 if ('serviceWorker' in navigator) {
   afficherEtat(dernierEtat());
+  // Nouvelle version de l'app (signal posé par le script en tête de index.html) :
+  // on propose de recharger pour utiliser les nouveaux fichiers. Rien au premier lancement.
+  const annoncerVersion = () => proposerActualisation('Nouvelle version de l\'app · Actualiser');
+  if (window.nouvelleVersion) annoncerVersion();
+  window.addEventListener('nouvelle-version', annoncerVersion);
   navigator.serviceWorker.register('sw.js')
-    .then(synchroniser)
+    .then(enregistrement => {
+      // Vérifie tout de suite s'il existe une nouvelle version de l'app (sinon le navigateur
+      // peut attendre plusieurs lancements).
+      if (navigator.onLine) enregistrement.update().catch(() => {});
+      return synchroniser();
+    })
     .catch(erreur => afficherEtat(`Hors ligne indisponible : ${erreur.message}`));
 } else {
   afficherEtat('Hors ligne indisponible sur ce navigateur.');
