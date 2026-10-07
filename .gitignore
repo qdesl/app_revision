@@ -13,3 +13,6 @@ essais_marker/
 .DS_Store
 *.swp
 .~lock.*
+
+# Dossiers de travail de Claude Code (copies parallèles du dépôt)
+.claude/
