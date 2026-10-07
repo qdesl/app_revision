@@ -6,9 +6,31 @@
   --accent: #2f5fd0;
   --carte: #ffffff;
   --taille-texte: 18px;
+  --hauteur-bas: 4.5rem;
+}
+
+/* Thème sombre : automatique (réglage du téléphone) ou forcé dans les réglages */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="clair"]) {
+    --fond: #16171a; --texte: #e6e6e9; --discret: #9a9aa2;
+    --ligne: #2e3036; --accent: #7aa2ff; --carte: #1f2125;
+  }
+}
+:root[data-theme="sombre"] {
+  --fond: #16171a; --texte: #e6e6e9; --discret: #9a9aa2;
+  --ligne: #2e3036; --accent: #7aa2ff; --carte: #1f2125;
+}
+:root[data-theme="sombre"] { color-scheme: dark; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="clair"]) { color-scheme: dark; } }
+
+/* Graphiques SVG (traits noirs, fond transparent) : inversés en mode sombre, couleurs conservées */
+:root[data-theme="sombre"] .section img[src$=".svg"] { filter: invert(1) hue-rotate(180deg); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="clair"]) .section img[src$=".svg"] { filter: invert(1) hue-rotate(180deg); }
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 
 html { -webkit-text-size-adjust: 100%; }
 
@@ -27,9 +49,39 @@ body {
   background: var(--fond); border-bottom: 1px solid var(--ligne);
 }
 .barre h1 { margin: 0; font-size: 1.05rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.barre h1 { flex: 1; }
+.barre-bouton {
+  font: inherit; font-weight: 600; color: var(--accent); background: none;
+  border: 1px solid var(--ligne); border-radius: .5rem; padding: .3rem .7rem; cursor: pointer;
+}
 .barre-retour { font-size: 2rem; line-height: 1; color: var(--accent); text-decoration: none; padding: 0 .4rem; }
 
-main { padding: 1rem; max-width: 42rem; margin: 0 auto; }
+main {
+  padding: 1rem; max-width: 42rem; margin: 0 auto;
+  padding-bottom: calc(var(--hauteur-bas) + 1.5rem + env(safe-area-inset-bottom));
+}
+
+/* Panneau des réglages */
+.reglages {
+  position: sticky; top: 3.2rem; z-index: 2;
+  padding: .8rem 1rem; background: var(--carte); border-bottom: 1px solid var(--ligne);
+  font-size: 16px;
+}
+.reglage { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .3rem 0; }
+.choix { display: flex; align-items: center; gap: .4rem; }
+.choix button {
+  font: inherit; min-width: 3rem; padding: .5rem .7rem; cursor: pointer;
+  color: var(--texte); background: var(--fond); border: 1px solid var(--ligne); border-radius: .5rem;
+}
+.choix button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--fond); }
+.choix output { min-width: 2rem; text-align: center; }
+
+/* Reprise de la dernière lecture */
+.reprise {
+  display: block; padding: 1rem; margin: .5rem 0 1rem; border-radius: .8rem;
+  background: var(--accent); color: var(--fond); text-decoration: none; font-weight: 600;
+}
+.reprise small { display: block; font-weight: 400; opacity: .85; }
 
 /* Accueil : liste des matières et chapitres */
 .matiere h2 { font-size: 1.1rem; margin: 1.2rem 0 .5rem; }
@@ -59,9 +111,17 @@ main { padding: 1rem; max-width: 42rem; margin: 0 auto; }
 
 .position { color: var(--discret); font-size: .85rem; margin: 0 0 .5rem; }
 
-.navigation { display: flex; gap: .6rem; margin-top: 2rem; }
-.navigation a {
-  flex: 1; text-align: center; padding: .9rem; border-radius: .6rem;
-  background: var(--accent); color: #fff; text-decoration: none; font-weight: 600;
+/* Gros boutons en bas de l'écran, à portée du pouce */
+.bas {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 2;
+  display: flex; gap: .6rem; padding: .6rem 1rem;
+  padding-bottom: max(.6rem, env(safe-area-inset-bottom));
+  background: var(--fond); border-top: 1px solid var(--ligne);
 }
-.navigation a[aria-disabled="true"] { opacity: .35; pointer-events: none; }
+.bas a {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  min-height: 3.2rem; border-radius: .7rem; font-size: 17px;
+  background: var(--accent); color: var(--fond); text-decoration: none; font-weight: 600;
+  -webkit-tap-highlight-color: transparent;
+}
+.bas a[aria-disabled="true"] { opacity: .3; }

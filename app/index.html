@@ -4,6 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Révisions</title>
+  <script>
+    // Thème et taille appliqués avant le premier affichage (pas d'éclair blanc en mode sombre).
+    try {
+      const r = JSON.parse(localStorage.getItem('revision.reglages')) || {};
+      if (r.theme && r.theme !== 'auto') document.documentElement.dataset.theme = r.theme;
+      if (r.taille) document.documentElement.style.setProperty('--taille-texte', r.taille + 'px');
+    } catch {}
+  </script>
   <link rel="stylesheet" href="vendor/katex/katex.min.css">
   <link rel="stylesheet" href="style.css">
   <script src="vendor/katex/katex.min.js" defer></script>
@@ -14,7 +22,10 @@
   <header class="barre">
     <a href="#/" class="barre-retour" id="retour" hidden aria-label="Retour">‹</a>
     <h1 id="titre">Révisions</h1>
+    <button class="barre-bouton" id="bouton-reglages" aria-label="Réglages">Aa</button>
   </header>
+  <div class="reglages" id="reglages" hidden></div>
   <main id="vue"></main>
+  <nav class="bas" id="bas" hidden></nav>
 </body>
 </html>
