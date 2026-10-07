@@ -4,6 +4,8 @@ Application web **hors ligne** (PWA) pour réviser ses cours sur un téléphone 
 
 **L'app : https://qdesl.github.io/app_revision/**
 
+> 📋 **Réglages restant à faire** (GitHub, PC fixe) : [`A_FAIRE.md`](A_FAIRE.md).
+
 Le contexte et toutes les décisions sont dans [`NOTES.md`](NOTES.md), les consignes pour Claude dans [`CLAUDE.md`](CLAUDE.md), l'avancement du traitement des cours dans [`suivi.md`](suivi.md).
 
 ## Sur le téléphone
