@@ -29,7 +29,7 @@ RACINE = Path(__file__).resolve().parent.parent
 MATIERES = RACINE / "matieres"
 INDEX = MATIERES / "index.json"
 
-CHAMPS_QUESTION = {"id", "niveau", "section", "enonce", "corrige", "source", "tags"}
+CHAMPS_QUESTION = {"id", "niveau", "section", "enonce", "corrige", "source", "reference", "tags"}
 
 
 class Rapport:
@@ -101,7 +101,7 @@ def verifier_questions(chemin: Path, id_chapitre: str, ids_vus: dict[str, str], 
         corrige = q.get("corrige")
         if not isinstance(corrige, list) or not corrige or not all(isinstance(e, str) and e.strip() for e in corrige):
             rapport.erreur(f"{ou} : \"corrige\" doit être une liste d'étapes (textes non vides)")
-        for champ in ("section", "source"):
+        for champ in ("section", "source", "reference"):
             if champ in q and not isinstance(q[champ], str):
                 rapport.erreur(f"{ou} : \"{champ}\" doit être un texte")
         if "tags" in q and not (isinstance(q["tags"], list) and all(isinstance(t, str) for t in q["tags"])):

@@ -3,6 +3,27 @@
 App **perso** pour réviser ses cours dans les transports, sur un téléphone **Android**.
 **Lire `NOTES.md` avant toute proposition** : il contient tout ce qui a été discuté et décidé (besoin, choix, raisons, prochaines étapes).
 
+## L'utilisateur : niveau M2 d'école d'ingénieur
+
+Toutes les fiches, questions et corrigés visent ce niveau :
+
+- Les bases de licence (algèbre linéaire, analyse, probabilités et statistiques de base, programmation) sont **acquises** : ne pas les réexpliquer, sauf si le cours ou un partiel les mobilise de façon non évidente.
+- Rigueur mathématique, vocabulaire exact, aller à l'essentiel : hypothèses précises des théorèmes, conditions d'application, ordres de grandeur, liens entre notions.
+- Niveau 3 des questions = **partiels de M2** (d'après `etalonnage.md`), pas des exercices d'application de licence.
+- Une extrapolation (notion ajoutée hors du cours) se fait **à ce niveau** : celui d'un cours de M2 ou d'un ouvrage de référence de la discipline.
+
+## Procédure : « traite la matière X »
+
+Dans l'ordre, en mettant `suivi.md` à jour à chaque étape (pour reprendre après une coupure) :
+
+1. **Convertir** : `outils/convertir.py matieres/X` (pandoc ou Marker selon le type ; ne refait que ce qui a changé). Les fichiers illisibles par les outils sont listés : les lire soi-même, page par page, une seule fois, et écrire le Markdown dans `convertis/`.
+2. **Organiser** : inventaire, plan des chapitres, trous et doublons → `organisation.md` (voir « Organiser à partir du désorganisé »). Poser les questions ambiguës à l'utilisateur.
+3. **Étalonner** : lire partiels et TD **une fois** → `etalonnage.md` (une page : types d'exercices, niveau, notations, pièges, barème, ce qui tombe souvent).
+4. **Notations** → `notations.md`.
+5. **Découper** le cours converti en chapitres : `convertis/<id>.md` ; `matiere.json` (nom, teinte, ordre).
+6. **Chapitre par chapitre** (une conversation courte par chapitre) : fiche → `fiches/<id>.md`, questions → `questions/<id>.json`, graphiques si utiles.
+7. **Publier** : `outils/generer_index.py`, puis commit et `git push` (l'app se met à jour sur le téléphone).
+
 ## Décisions à respecter
 
 - **PWA hors ligne** (doit marcher dans le train, sans réseau). L'option « app sur claude.ai » a été écartée pour ça.
@@ -19,7 +40,7 @@ App **perso** pour réviser ses cours dans les transports, sur un téléphone **
 
 ## Outils
 
-- **Marker** (PDF, scans → Markdown + LaTeX) est installé dans `.venv/` de ce dossier, **séparé** du Python anaconda de base (qui contient un PyTorch à ne pas toucher). Commande : voir `NOTES.md` §7.
+- **Marker** (PDF, scans → Markdown + LaTeX) est installé dans `.venv/` de ce dossier (PC fixe), **séparé** du Python anaconda de base (qui contient un PyTorch à ne pas toucher). Lancé par `outils/convertir_pdf.sh` (voir `NOTES.md` §6), lui-même appelé par `outils/convertir.py`.
 - **pandoc 3.8** (système) pour `.tex`, `.docx`, `.ipynb`, `.md`.
 - Pas de Node.js : app en HTML/CSS/JS sans build, KaTeX embarqué.
 
@@ -70,9 +91,18 @@ Une seule notation par objet, dans toute la matière. **Ordre de priorité** :
 Une fiche par chapitre, `matieres/<matière>/fiches/<chapitre>.md`, affichée par défaut dans l'app (onglet « Fiche », le cours complet reste à côté). Ce n'est **pas qu'un résumé** du cours :
 
 - **Toutes les sources servent** : cours (le fond), `etalonnage.md` tiré des partiels et TD (ce qui tombe, le niveau, les pièges), notes perso et captures (ce que le prof a dit, ses insistances).
-- **Extrapoler est permis** : une notion vue en TD, en partiel ou dans les notes mais absente du cours est **ajoutée**, dans un encadré « Complément (source) ».
+- **Extrapoler est permis** : une notion vue en TD, en partiel ou dans les notes mais absente du cours, ou une notion de niveau M2 qui éclaire le chapitre, est **ajoutée**, dans un encadré « Complément ».
+- **Toute extrapolation est sourcée**, mais la source **n'a pas besoin d'apparaître dans l'app** : elle va dans un commentaire HTML, invisible à l'affichage, juste après le passage concerné :
+
+  ```markdown
+  > **Complément :** la forte convexité … <!-- source : TD 2, ex. 4 -->
+  > **Complément :** le théorème de … <!-- source : Boyd & Vandenberghe, Convex Optimization (2004), §9.3.1, p. 459 -->
+  ```
+
+  - Source interne : document de `sources/` (TD 2 ex. 4, partiel 2025 ex. 1, notes du 12/10, capture IMG_2041).
+  - Source externe : ouvrage de référence, cours universitaire publié ou article, **avec l'endroit précis** (chapitre, section, page). **Ne jamais inventer une référence** : si l'ajout vient de la connaissance générale de Claude sans référence vérifiable, écrire `<!-- source : connaissance générale de Claude, à vérifier -->` et le signaler à l'utilisateur.
 - **Notations** : celles retenues dans `notations.md` (voir « Notations » ci-dessus) ; une notion venue d'ailleurs y est réécrite. Section `## Notations` en tête de chaque fiche.
-- **Toujours citer la source** d'un encadré : (TD 3, ex. 2), (partiel 2024, ex. 1), (notes du 12/10).
+- Dans le texte visible, ne garder une origine que si elle **sert à réviser** (« Tombé en partiel (2024, ex. 2) » dit ce qui tombe) ; sinon, la source reste dans le commentaire.
 - Encadrés reconnus par l'app (citation `>` qui commence par le mot-clé en gras) :
 
   | Début de l'encadré | Couleur | Pour |
@@ -81,7 +111,7 @@ Une fiche par chapitre, `matieres/<matière>/fiches/<chapitre>.md`, affichée pa
   | `> **Méthode (TD 3) :**`, `**Astuce**`, `**Réflexe**` | vert | comment faire |
   | `> **Piège :**`, `**Attention**`, `**Erreur**` | rouge | erreurs classiques |
   | `> **Tombé en partiel (2024, ex. 2) :**`, `**Annale**` | orange | ce qui tombe |
-  | `> **Complément (TD 2, ex. 4) :**`, `**Hors cours**` | violet | notion absente du cours |
+  | `> **Complément :**`, `**Hors cours**` | violet | notion absente du cours (source en commentaire) |
 
 - Lancer `outils/generer_index.py` (la fiche est ajoutée à l'index toute seule) et cocher la colonne « Fiche » de `suivi.md`.
 
@@ -100,13 +130,14 @@ Un fichier par chapitre : `matieres/<matière>/questions/<chapitre>.json`.
       "enonce": "Markdown + LaTeX ($…$, $$…$$)",
       "corrige": ["Étape 1 en Markdown", "Étape 2", "Conclusion"],
       "source": "partiel 2025, ex. 2",
+      "reference": "facultatif, non affiché : d'où vient une question extrapolée",
       "tags": ["calcul"]
     }
   ]
 }
 ```
 
-- **Obligatoires** : `id`, `niveau`, `enonce`, `corrige`. **Facultatifs** : `section` (titre de la section du cours ou de la fiche concernée), `source`, `tags`. `"chapitre"` = id du chapitre (nom du fichier).
+- **Obligatoires** : `id`, `niveau`, `enonce`, `corrige`. **Facultatifs** : `section` (titre de la section du cours ou de la fiche concernée), `source` (**affichée** dans l'app : à réserver aux annales et TD, utile pour réviser), `reference` (**non affichée** : source d'une question extrapolée, mêmes règles que pour les fiches), `tags`. `"chapitre"` = id du chapitre (nom du fichier).
 - **Niveaux** : `1` restitution (définition, énoncé, formule) · `2` application directe · `3` niveau partiel (même type et même difficulté que les annales, d'après `etalonnage.md`).
 - **Corrigé pas à pas** : une liste d'étapes courtes, chacune lisible seule (l'app les dévoile une par une).
 - **Ids stables** : `<chapitre>-001`, `-002`… uniques dans tout le dépôt, **jamais renumérotés ni réutilisés** (ils servent à suivre les résultats). Une question supprimée laisse un trou ; une nouvelle prend le numéro suivant.

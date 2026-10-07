@@ -36,6 +36,6 @@ $$x_{k+1} = x_k - \eta \nabla f(x_k)$$
 
 > **Tombé en partiel (2025, ex. 2) :** calculer les 3 premiers itérés sur une quadratique, puis trouver pour quelles valeurs de $\eta$ la suite converge. Réflexe : $x_{k+1} = (1 - 2\eta a) x_k$ pour $f(x) = a x^2$, donc convergence $\iff |1 - 2\eta a| < 1$.
 
-> **Complément (TD 2, ex. 4) :** la *forte convexité*, absente du cours. $f$ est $\mu$-fortement convexe si $\nabla^2 f(x) \succeq \mu I$ ; avec $\eta = 1/L$, la convergence devient linéaire : $f(x_k) - f(x^\star) \le \left(1 - \frac{\mu}{L}\right)^k \bigl(f(x_0) - f(x^\star)\bigr)$. Le TD note $m$ ce que le cours noterait $\mu$.
+> **Complément :** la *forte convexité*, absente du cours. $f$ est $\mu$-fortement convexe si $\nabla^2 f(x) \succeq \mu I$ ; avec $\eta = 1/L$, la convergence devient linéaire : $f(x_k) - f(x^\star) \le \left(1 - \frac{\mu}{L}\right)^k \bigl(f(x_0) - f(x^\star)\bigr)$. Le TD note $m$ ce que le cours noterait $\mu$. <!-- source : TD 2, ex. 4 (fictif) ; Boyd & Vandenberghe, Convex Optimization (2004), §9.3 -->
 
 > **Ce que le prof a dit** (notes du 12/10) : « la preuve du $O(1/k)$ n'est pas exigible, mais l'énoncé oui ».
