@@ -21,3 +21,6 @@ essais_marker/
 
 # Brouillons de Claude (fiches, questions en cours d'écriture) : jamais publiés
 *.brouillon.*
+
+# Site construit par outils/chiffrer.py (publié par GitHub Actions)
+_site/
