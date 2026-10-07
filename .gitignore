@@ -1,0 +1,15 @@
+# Environnements Python (Marker, vLLM) : plusieurs Go, propres à chaque PC
+.venv/
+.venv-vllm/
+__pycache__/
+
+# Documents bruts des profs : jamais publiés (dépôt public)
+matieres/*/sources/
+
+# Résultats d'essais de Marker
+essais_marker/
+
+# Divers
+.DS_Store
+*.swp
+.~lock.*
