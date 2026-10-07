@@ -1,7 +1,7 @@
 # App de révision — notes de conception
 
 Tout ce qui a été dit et décidé avec Claude, pour pouvoir reprendre le projet plus tard.
-Commencé le 2026-10-06. Rien n'est encore codé à part la conversion des PDF (Marker), installée et testée (§7).
+Commencé le 2026-10-06. Le 2026-10-07, la PWA a été codée (étapes 1 à 20, voir l'historique Git), mise en ligne sur https://qdesl.github.io/app_revision/ et installée sur le téléphone. Mode d'emploi : `README.md`.
 
 ---
 
@@ -158,11 +158,12 @@ _(à compléter avec les résultats des tests)_
 
 ## 10. Prochaines étapes
 
-1. Choisir une **première matière** et déposer un cours + un partiel + un TD dans `matieres/<matière>/sources/`.
-2. Écrire le script qui convertit tout un dossier (pandoc ou Marker selon le type de fichier).
-3. Coder la PWA : lecture d'abord, puis révision.
-4. Claude rédige la fiche d'étalonnage, puis les questions chapitre par chapitre (§5).
-5. Mettre en place l'hébergement (compte à créer) et installer l'app sur le téléphone.
+Fait le 2026-10-07 : PWA (lecture, fiches, notations, sommaire, révision en cartes, hors ligne), hébergement GitHub Pages, installation sur le téléphone, scripts `convertir.py`, `generer_index.py`, `figure.py`, `relier_pc_fixe.sh`.
+
+1. Sur le PC fixe : lancer `outils/relier_pc_fixe.sh` (README, « Sur le PC fixe »), ajouter `outils/convertir_pdf.sh` au dépôt, créer une clé SSH. Vérifier que `convertir_pdf.sh` écrit bien dans `$SORTIE/<nom>/<nom>.md` (ce que suppose `convertir.py`, non testé avec le vrai Marker).
+2. Choisir une **première matière**, déposer cours + partiels + TD + notes dans `matieres/<matière>/sources/`, puis « traite la matière X » (procédure dans `CLAUDE.md`).
+3. Supprimer la matière `exemple` une fois une vraie matière en place.
+4. Plus tard (écarté pour l'instant) : session « j'ai 10 minutes », cartes créées par appui long, bouton Exporter (résultats → Claude), statistiques, mode noir pur.
 
 ## 11. Préférences pour travailler ensemble
 
