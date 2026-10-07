@@ -11,6 +11,7 @@ import { lire, ecrire } from './stockage.js';
 import { activerBalayage } from './geste.js';
 import { aReviser, enAvance, prochaineRevision } from './revision.js';
 import { lancerSeance } from './ecran-revision.js';
+import { icone } from './icones.js';
 import './reglages.js';
 import './horsligne.js';
 
@@ -30,6 +31,22 @@ const cacheQuestions = {};   // chemin du .json → liste des questions
 let lecture = null;          // { lien(i), n, total } quand une section est affichée
 let pagePrecedente = '#/';   // pour revenir d'un glossaire à la section qu'on lisait
 let sensArrivee = 0;         // 1 : la nouvelle section arrive de droite, -1 : de gauche, 0 : sans animation
+
+// Couleur de chaque matière : « teinte » de matiere.json, sinon une teinte choisie d'après son id.
+const TEINTES = [268, 160, 25, 300, 200, 60, 340, 120];
+function teinteDe(matiere) {
+  if (typeof matiere.teinte === 'number') return matiere.teinte;
+  let h = 0;
+  for (const c of matiere.id) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return TEINTES[h % TEINTES.length];
+}
+function appliquerTeinte(matiere) {
+  if (matiere) document.documentElement.style.setProperty('--teinte', teinteDe(matiere));
+  else document.documentElement.style.removeProperty('--teinte');
+}
+
+retour.innerHTML = icone('chevron-left');
+document.getElementById('bouton-reglages').innerHTML = icone('settings-2');
 
 const echapper = s => String(s).replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
 
@@ -113,6 +130,7 @@ function modeAccueil(actif) {
 
 function afficherAccueil() {
   modeAccueil(true);
+  appliquerTeinte(null);
   titre.textContent = 'Révisions';
   retour.hidden = true;
   retour.href = '#/';
@@ -193,8 +211,9 @@ async function afficherSection(doc, idMatiere, idChapitre, n) {
         `<a href="${lienPosition(id, idMatiere, idChapitre)}" aria-current="${id === doc}">${nom}</a>`).join('')}
     </nav>` : '';
 
-  const notations = (matiere.notations ? `<a class="lien-notations" href="#/notations/${idMatiere}">Notations</a>` : '')
-    + (chapitre.questions ? `<a class="lien-notations" href="#/reviser/${idMatiere}/${idChapitre}">Réviser</a>` : '');
+  appliquerTeinte(matiere);
+  const notations = (matiere.notations ? `<a class="lien-notations" href="#/notations/${idMatiere}" aria-label="Notations">${icone('sigma')}</a>` : '')
+    + (chapitre.questions ? `<a class="lien-notations" href="#/reviser/${idMatiere}/${idChapitre}" aria-label="Réviser">${icone('target')}</a>` : '');
 
   titre.textContent = chapitre.titre;
   retour.hidden = false;
@@ -206,9 +225,9 @@ async function afficherSection(doc, idMatiere, idChapitre, n) {
   bas.hidden = false;
   bas.onclick = null;
   bas.innerHTML = `
-    <a class="precedent" href="${lien(n - 1)}" aria-disabled="${n === 0}" aria-label="Section précédente">‹ Préc.</a>
+    <a class="precedent" href="${lien(n - 1)}" aria-disabled="${n === 0}" aria-label="Section précédente">${icone('chevron-left')}</a>
     <span class="compteur">${n + 1} / ${sections.length}</span>
-    <a class="suivant" href="${lien(n + 1)}" aria-disabled="${n === sections.length - 1}" aria-label="Section suivante">Suivant ›</a>`;
+    <a class="suivant" href="${lien(n + 1)}" aria-disabled="${n === sections.length - 1}" aria-label="Section suivante">Suivant ${icone('chevron-right')}</a>`;
   window.scrollTo(0, 0);
 }
 
@@ -216,6 +235,7 @@ async function afficherNotations(idMatiere) {
   const matiere = trouverMatiere(idMatiere);
   if (!matiere.notations) throw new Error('Pas de notations pour cette matière');
   const sections = await chargerSections(matiere.notations);
+  appliquerTeinte(matiere);
   lecture = null;
   modeAccueil(false);
   progression.hidden = true;
@@ -229,7 +249,8 @@ async function afficherNotations(idMatiere) {
 }
 
 async function afficherRevision(idMatiere, idChapitre, quandMeme = false) {
-  const { chapitre } = trouverChapitre(idMatiere, idChapitre);
+  const { matiere, chapitre } = trouverChapitre(idMatiere, idChapitre);
+  appliquerTeinte(matiere);
   const questions = await chargerQuestions(chapitre);
   lecture = null;
   modeAccueil(false);

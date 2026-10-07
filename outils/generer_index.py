@@ -7,7 +7,8 @@ Ce qui est lu, pour chaque dossier matieres/<matière>/ :
   fiches/<id>.md           fiche de révision du chapitre (facultatif)
   questions/<id>.json      questions du chapitre (facultatif, vérifiées)
   notations.md             glossaire de la matière (facultatif)
-  matiere.json             facultatif : {"nom": "…", "ordre": ["id1", "id2"], "exclure": ["id"]}
+  matiere.json             facultatif : {"nom": "…", "teinte": 160, "ordre": ["id1", "id2"], "exclure": ["id"]}
+                           (teinte : couleur de la matière dans l'app, angle de 0 à 360 sur le cercle des couleurs)
 
 Titre d'un chapitre : premier titre « # … » du cours converti, sinon son id.
 Ordre des chapitres : celui de « ordre » dans matiere.json, puis les autres par ordre alphabétique.
@@ -132,6 +133,12 @@ def construire_matiere(dossier: Path, ids_vus: dict[str, str], rapport: Rapport)
     ids = [i for i in ordre if i in ids] + sorted(i for i in ids if i not in ordre)
 
     matiere = {"id": dossier.name, "nom": reglages.get("nom") or dossier.name.replace("_", " ").capitalize()}
+    teinte = reglages.get("teinte")
+    if teinte is not None:
+        if isinstance(teinte, (int, float)) and 0 <= teinte <= 360:
+            matiere["teinte"] = teinte
+        else:
+            rapport.avertir(f"{dossier.name}/matiere.json : \"teinte\" doit être un nombre entre 0 et 360")
     if (dossier / "notations.md").exists():
         matiere["notations"] = relatif(dossier / "notations.md")
 

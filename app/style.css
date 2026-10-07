@@ -10,14 +10,25 @@
   src: url(vendor/literata/Literata-latin-italique.woff2) format('woff2');
 }
 
-/* ---------- Couleurs ---------- */
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  font-style: normal; font-weight: 400 800; font-display: swap;
+  src: url(vendor/jakarta/PlusJakartaSans-latin.woff2) format('woff2');
+}
+
+/* ---------- Couleurs ----------
+   --teinte : couleur de la matière (angle 0–360), changée par l'app selon la page.
+   L'accent et ses variantes en sont tirés (oklch : même luminosité quelle que soit la teinte). */
 :root {
   --fond: #f5f3ee;
   --surface: #fffdf9;
   --texte: #1f1d1a;
   --discret: #706b63;
   --ligne: #e5e0d6;
-  --accent: #3d52b8;
+  --teinte: 268;
+  --accent: oklch(0.50 0.15 var(--teinte));
+  --accent-doux: oklch(0.95 0.03 var(--teinte));
+  --accent-fort: oklch(0.42 0.14 var(--teinte));
   --sur-accent: #ffffff;
   --ombre: 0 1px 2px rgb(60 50 30 / .06), 0 4px 14px rgb(60 50 30 / .06);
   --piege: #c0392b; --partiel: #c76a00; --methode: #2e7d43; --retenir: #3d52b8; --complement: #7e44b8;
@@ -26,7 +37,7 @@
   --hauteur-bas: 4.6rem;
   --rayon: 14px;
   --police-lecture: 'Literata', Georgia, 'Times New Roman', serif;
-  --police-interface: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --police-interface: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --transition: 180ms cubic-bezier(.2, .7, .2, 1);
 }
 
@@ -35,14 +46,14 @@
   :root:not([data-theme="clair"]) {
     color-scheme: dark;
     --fond: #121316; --surface: #1b1c20; --texte: #e9e6e1; --discret: #9b978f; --ligne: #2b2c32;
-    --accent: #93a3ff; --sur-accent: #121316; --ombre: 0 1px 2px rgb(0 0 0 / .3), 0 6px 18px rgb(0 0 0 / .25);
+    --accent: oklch(0.80 0.11 var(--teinte)); --accent-doux: oklch(0.29 0.05 var(--teinte)); --accent-fort: oklch(0.86 0.09 var(--teinte)); --sur-accent: #121316; --ombre: 0 1px 2px rgb(0 0 0 / .3), 0 6px 18px rgb(0 0 0 / .25);
     --piege: #ff7b6e; --partiel: #f2a54a; --methode: #6cc788; --retenir: #93a3ff; --complement: #c39bf2;
   }
 }
 :root[data-theme="sombre"] {
   color-scheme: dark;
   --fond: #121316; --surface: #1b1c20; --texte: #e9e6e1; --discret: #9b978f; --ligne: #2b2c32;
-  --accent: #93a3ff; --sur-accent: #121316; --ombre: 0 1px 2px rgb(0 0 0 / .3), 0 6px 18px rgb(0 0 0 / .25);
+  --accent: oklch(0.80 0.11 var(--teinte)); --accent-doux: oklch(0.29 0.05 var(--teinte)); --accent-fort: oklch(0.86 0.09 var(--teinte)); --sur-accent: #121316; --ombre: 0 1px 2px rgb(0 0 0 / .3), 0 6px 18px rgb(0 0 0 / .25);
   --piege: #ff7b6e; --partiel: #f2a54a; --methode: #6cc788; --retenir: #93a3ff; --complement: #c39bf2;
 }
 
@@ -67,6 +78,8 @@ body {
 }
 
 a, button { -webkit-tap-highlight-color: transparent; }
+
+.icone { width: 1.25em; height: 1.25em; flex: none; vertical-align: -.22em; }
 button { font: inherit; color: inherit; }
 
 /* Retour visuel au toucher : léger enfoncement */
@@ -191,7 +204,7 @@ main { padding: .8rem 1rem; max-width: 42rem; margin: 0 auto; padding-bottom: ca
 }
 .onglets a[aria-current="true"] { background: var(--surface); color: var(--texte); box-shadow: var(--ombre); }
 .lien-notations {
-  flex: none; padding: .45rem .85rem; font-size: .82rem; font-weight: 600; text-decoration: none;
+  flex: none; display: grid; place-items: center; min-width: 2.5rem; height: 2.5rem; padding: 0 .6rem; font-size: .82rem; font-weight: 600; text-decoration: none;
   color: var(--accent); background: var(--surface); border: 1px solid var(--ligne); border-radius: 999px;
 }
 .entete-lecture:not(:has(.onglets)) { justify-content: flex-end; }
@@ -260,14 +273,14 @@ main { padding: .8rem 1rem; max-width: 42rem; margin: 0 auto; padding-bottom: ca
   flex: 1; display: flex; align-items: center; justify-content: center; gap: .3rem;
   min-height: 3.3rem; font-size: 1rem; font-weight: 650; text-decoration: none; border-radius: var(--rayon);
 }
-.bas a.precedent { color: var(--texte); background: var(--surface); border: 1px solid var(--ligne); }
+.bas a.precedent { flex: none; width: 3.3rem; color: var(--texte); background: var(--surface); border: 1px solid var(--ligne); }
 .bas a.suivant { color: var(--sur-accent); background: var(--accent); box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 30%, transparent); }
 .bas a[aria-disabled="true"] { opacity: .35; box-shadow: none; }
 .bas .compteur { flex: none; min-width: 3.4rem; text-align: center; color: var(--discret); font-size: .85rem; font-variant-numeric: tabular-nums; }
 
 /* Boutons d'action de la barre du bas (révision) */
 .bas .action {
-  flex: 1; min-height: 3.3rem; border: 0; border-radius: var(--rayon); cursor: pointer;
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: .45rem; min-height: 3.3rem; border: 0; border-radius: var(--rayon); cursor: pointer;
   font-size: 1rem; font-weight: 650;
 }
 .bas .action.principal { color: var(--sur-accent); background: var(--accent); box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 30%, transparent); }

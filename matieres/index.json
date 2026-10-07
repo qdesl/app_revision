@@ -3,6 +3,7 @@
     {
       "id": "exemple",
       "nom": "Exemple",
+      "teinte": 160,
       "notations": "exemple/notations.md",
       "chapitres": [
         {

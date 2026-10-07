@@ -4,6 +4,7 @@
 
 import { rendre } from './markdown.js';
 import { enregistrer } from './revision.js';
+import { icone } from './icones.js';
 
 const NOMS_NIVEAUX = { 1: 'Restitution', 2: 'Application', 3: 'Niveau partiel' };
 const ECART_REPRISE = 3; // une question ratée revient 3 questions plus loin
@@ -48,8 +49,8 @@ export function lancerSeance(ecran, file, { fin }) {
     };
     const boutonsReponse = () => {
       bas.innerHTML = `
-        <button class="action rate" data-action="rate">✗ À revoir</button>
-        <button class="action reussi" data-action="reussi">✓ Réussi</button>`;
+        <button class="action rate" data-action="rate">${icone('rotate-ccw')} À revoir</button>
+        <button class="action reussi" data-action="reussi">${icone('check')} Réussi</button>`;
     };
     const montrerEtapes = jusqua => {
       liste.hidden = false;

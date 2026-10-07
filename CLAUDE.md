@@ -43,7 +43,7 @@ Pour chaque matière, `matieres/<matière>/organisation.md` (créé au premier t
 
 - `convertis/<id>.md`, **directement** dans `convertis/` : **un chapitre** par fichier, avec son id (`convertis/gradient.md`). Un document qui couvre plusieurs chapitres est découpé.
 - `convertis/td/`, `convertis/partiels/`, `convertis/notes/`, `convertis/captures/`… : tout ce qui **n'est pas** un chapitre (TD, partiels, notes, captures transcrites). Ces fichiers servent à Claude (fiches, étalonnage, questions) mais **ne deviennent jamais des chapitres** de l'app.
-- `matiere.json` (facultatif) : `{"nom": "Optimisation", "ordre": ["convexite", "gradient"], "exclure": []}` — nom affiché, ordre des chapitres (sinon alphabétique), chapitres à masquer.
+- `matiere.json` (facultatif) : `{"nom": "Optimisation", "teinte": 160, "ordre": ["convexite", "gradient"], "exclure": []}` — nom affiché, couleur de la matière dans l'app (`teinte` : angle 0–360 sur le cercle des couleurs ; ex. 25 rouge, 60 ambre, 160 vert, 200 bleu-vert, 268 indigo, 300 violet, 340 rose ; sinon attribuée automatiquement), ordre des chapitres (sinon alphabétique), chapitres à masquer. Donner des teintes **bien distinctes** aux matières.
 
 ## Index de l'app : `outils/generer_index.py`
 

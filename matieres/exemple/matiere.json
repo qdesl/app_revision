@@ -1,4 +1,7 @@
 {
   "nom": "Exemple",
-  "ordre": ["optimisation"]
+  "teinte": 160,
+  "ordre": [
+    "optimisation"
+  ]
 }
