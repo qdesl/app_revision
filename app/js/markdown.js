@@ -16,8 +16,9 @@ function extraireFormules(texte) {
     if (code) return code;
     const bloc = bloc1 ?? bloc2;
     const n = formules.push({ tex: bloc ?? enLigne1 ?? enLigne2, bloc: bloc !== undefined }) - 1;
-    // Une formule en bloc devient un paragraphe à part entière.
-    return bloc !== undefined ? `\n\n@@MATH${n}@@\n\n` : `@@MATH${n}@@`;
+    // Même une formule en bloc reste dans son paragraphe : la couper du texte casserait
+    // une mise en forme qui l'entoure (théorème en italique de pandoc : *Si … $$…$$*).
+    return `@@MATH${n}@@`;
   });
   return { sortie, formules };
 }
@@ -25,17 +26,16 @@ function extraireFormules(texte) {
 function rendreFormule({ tex, bloc }) {
   try {
     const html = katex.renderToString(tex.trim(), { displayMode: bloc, throwOnError: false, strict: 'ignore' });
-    // Le conteneur .formule-bloc défile horizontalement si l'équation est trop large.
-    return bloc ? `<div class="formule-bloc">${html}</div>` : html;
+    // .formule-bloc : un <span> affiché en bloc (valide dans un paragraphe ou un italique),
+    // qui défile horizontalement si l'équation est trop large.
+    return bloc ? `<span class="formule-bloc">${html}</span>` : html;
   } catch {
     return `<code>${tex}</code>`;
   }
 }
 
 function remettreFormules(html, formules) {
-  return html
-    .replace(/<p>@@MATH(\d+)@@<\/p>/g, (_, n) => rendreFormule(formules[n]))
-    .replace(/@@MATH(\d+)@@/g, (_, n) => rendreFormule(formules[n]));
+  return html.replace(/@@MATH(\d+)@@/g, (_, n) => rendreFormule(formules[n]));
 }
 
 function texteBrut(token) {

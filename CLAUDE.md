@@ -41,7 +41,8 @@ Dans l'ordre, en mettant `suivi.md` à jour à chaque étape (pour reprendre apr
 ## Outils
 
 - **Marker** (PDF, scans → Markdown + LaTeX) est installé dans `.venv/` de ce dossier (PC fixe), **séparé** du Python anaconda de base (qui contient un PyTorch à ne pas toucher). Lancé par `outils/convertir_pdf.sh` (voir `NOTES.md` §6), lui-même appelé par `outils/convertir.py`.
-- **pandoc 3.8** (système) pour `.tex`, `.docx`, `.ipynb`, `.md`.
+- **pandoc 3.8** (système) pour `.tex`, `.docx`, `.odt`, `.ipynb`, `.md`, `.html`, `.epub`.
+- **`outils/convertir.py`** convertit tout `sources/` d'un coup : chaque document → `convertis/<type>/<nom>/<nom>.md` (type = sous-dossier de `sources/`, sinon `vrac`), pandoc ou Marker selon l'extension, seulement ce qui a changé. Il signale les figures TikZ ignorées par pandoc (→ `outils/figure.py`) et les conversions Marker presque vides (manuscrit → à lire soi-même). Ces fichiers sont la matière première : ils ne deviennent des chapitres qu'une fois découpés en `convertis/<id>.md`.
 - Pas de Node.js : app en HTML/CSS/JS sans build, KaTeX embarqué.
 
 ## Hors ligne (service worker)

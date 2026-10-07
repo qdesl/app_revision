@@ -331,6 +331,7 @@ main { padding: .8rem 1rem; max-width: 42rem; margin: 0 auto; padding-bottom: ca
 .section blockquote.encadre-complement { --c: var(--complement); }
 
 /* Équations et tableaux trop larges : défilement horizontal au lieu de rétrécir */
+.formule-bloc { display: block; }
 .formule-bloc, .defile { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; margin: 1em 0; scrollbar-width: thin; }
 .formule-bloc .katex-display { margin: 0; padding: .35em 0; }
 .section table { border-collapse: separate; border-spacing: 0; font-size: .88em; border: 1px solid var(--ligne); border-radius: 10px; overflow: hidden; }
